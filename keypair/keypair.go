@@ -5,6 +5,8 @@ import (
 	"crypto/rand"
 	"errors"
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
@@ -18,6 +20,11 @@ var (
 	ErrPointNotOnCurve      = errors.New("point is not on the curve")
 	ErrPointNotCurveParam   = errors.New("point param not same as curve")
 )
+
+type Key struct {
+	Address    common.Address
+	PrivateKey PrivateKey
+}
 
 type PublicKey struct {
 	*ecdsa.PublicKey
@@ -83,4 +90,15 @@ func NewPrivateKey(sk *ecdsa.PrivateKey) (*PrivateKey, error) {
 		return nil, ErrPointNotOnCurve
 	}
 	return &PrivateKey{sk}, nil
+}
+
+func NewKey(sk *ecdsa.PrivateKey) (Key, error) {
+	privKey, err := NewPrivateKey(sk)
+	if err != nil {
+		return Key{}, err
+	}
+	return Key{
+		Address:    crypto.PubkeyToAddress(sk.PublicKey),
+		PrivateKey: *privKey,
+	}, nil
 }

@@ -110,3 +110,71 @@ func TestCircuit(t *testing.T) {
 		fmt.Println("verify time: ", time.Now().Sub(start).String())
 	}
 }
+
+func TestNewProblemProver(t *testing.T) {
+	r1cs := CompileCircuit()
+	pk, vk := SetupZKP(r1cs)
+
+	r1csBuf := new(bytes.Buffer)
+	r1cs.WriteTo(r1csBuf)
+
+	pkBuf := new(bytes.Buffer)
+	pk.WriteTo(pkBuf)
+
+	prover, err := NewProblemProver(r1csBuf, pkBuf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	msg := "test evanesco"
+	hash := sha256.New()
+	hash.Write([]byte(msg))
+	preimage := hash.Sum(nil)
+
+	mimcHash, proof := prover.Prove(preimage)
+
+	assert.Equal(t, true, ZKPVerify(vk, mimcHash, proof))
+}
+
+func TestNewProblemVerifier(t *testing.T) {
+	r1cs := CompileCircuit()
+	pk, vk := SetupZKP(r1cs)
+
+	vkBuf := new(bytes.Buffer)
+	vk.WriteTo(vkBuf)
+
+	verifier, err := NewProblemVerifier(vkBuf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	msg := "test evanesco"
+	hash := sha256.New()
+	hash.Write([]byte(msg))
+	preimage := hash.Sum(nil)
+
+	hashMimc, proof := ZKPProve(r1cs, pk, preimage)
+
+	assert.Equal(t, true, verifier.Verify(preimage, hashMimc, proof))
+}
+
+//TestSetupZKP checks setup randomness
+func TestSetupZKP(t *testing.T) {
+	r1cs := CompileCircuit()
+	pk1, vk1 := SetupZKP(r1cs)
+
+	pk2, vk2 := SetupZKP(r1cs)
+
+	buf1 := new(bytes.Buffer)
+	buf2 := new(bytes.Buffer)
+
+	pk1.WriteTo(buf1)
+	pk2.WriteTo(buf2)
+	assert.Equal(t, false, bytes.Equal(buf1.Bytes(), buf2.Bytes()))
+
+	buf1.Reset()
+	buf2.Reset()
+	vk1.WriteTo(buf1)
+	vk2.WriteTo(buf2)
+	assert.Equal(t, false, bytes.Equal(buf1.Bytes(), buf2.Bytes()))
+}

@@ -2,13 +2,16 @@ package miner
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Evanesco-Labs/Miner/keypair"
+	"github.com/Evanesco-Labs/Miner/problem"
 	"github.com/Evanesco-Labs/Miner/vrf"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
-	"go.uber.org/atomic"
 	"math/big"
 	"sync"
+	"sync/atomic"
 )
 
 var (
@@ -18,56 +21,85 @@ var (
 
 type Worker struct {
 	mu               sync.RWMutex
+	running          int32
 	MaxTaskCnt       int32
 	coinbase         common.Address
 	pk               *keypair.PublicKey
 	sk               *keypair.PrivateKey
-	workingTaskCnt   atomic.Int32
-	coinbaseInterval uint64
-	minerTaskCh      chan *Task //channel to get task from miner
-	solvedTaskCh     chan *Task //send finished task to miner
-	//scannerTaskCh    chan *Task //channel to send waiting task to scanner
-	scanner   *Scanner
-	zkpProver *ZKPProver
-	startCh   chan struct{}
-	stopCh    chan struct{}
-	exitCh    chan struct{}
+	workingTaskCnt   int32
+	coinbaseInterval Height
+	submitAdvance    Height
+	inboundTaskCh    chan *Task //channel to get task from miner
+	scanner          *Scanner
+	zkpProver        *problem.ProblemProver
+	exitCh           chan struct{}
 }
 
 func (w *Worker) Loop() {
 	for {
 		select {
-		case <-w.startCh:
-		case <-w.stopCh:
 		case <-w.exitCh:
-		case task := <-w.minerTaskCh:
+			atomic.StoreInt32(&w.running, 0)
+			return
+		case task := <-w.inboundTaskCh:
+			if !w.isRunning() {
+				continue
+			}
 			if task.Step == TASKSTART {
-				err := w.HandleStartTask(task)
-				if err != nil {
-					log.Error(err.Error())
-				}
+				go func() {
+					atomic.AddInt32(&w.workingTaskCnt, int32(1))
+					defer atomic.AddInt32(&w.workingTaskCnt, int32(-1))
+					err := w.HandleStartTask(task)
+					if err != nil {
+						log.Error(err.Error())
+					}
+				}()
 				continue
 			}
 			if task.Step == TASKGETCHALLENGEBLOCK {
-				err := w.HandleChallengedTask(task)
-				if err != nil {
-					log.Error(err.Error())
-				}
+				go func() {
+					atomic.AddInt32(&w.workingTaskCnt, int32(1))
+					defer atomic.AddInt32(&w.workingTaskCnt, int32(-1))
+					err := w.HandleChallengedTask(task)
+					if err != nil {
+						log.Error(err.Error())
+					}
+				}()
 				continue
 			}
 		}
 	}
 }
 
+func (w *Worker) isRunning() bool {
+	return atomic.LoadInt32(&w.running) == 1
+}
+
+func (w *Worker) start() {
+	atomic.StoreInt32(&w.running, 1)
+}
+
+func (w *Worker) stop() {
+	atomic.StoreInt32(&w.running, 0)
+}
+
+func (w *Worker) close() {
+	atomic.StoreInt32(&w.running, 0)
+	close(w.exitCh)
+}
+
 func (w *Worker) HandleStartTask(task *Task) error {
+	fmt.Println("handle start task")
 	task.coinbase = w.coinbase
 	task.lottery.SetCoinbase(w.coinbase)
 	index, proof := vrf.Evaluate(w.sk, task.lastCoinBaseHash[:])
-	task.challengeIndex = Height(GetChallengeIndex(index, w.coinbaseInterval))
+	task.challengeIndex = Height(GetChallengeIndex(index, uint64(w.coinbaseInterval)-uint64(w.submitAdvance)))
+
 	task.lottery.VrfProof = proof
 	task.lottery.Index = index
 	task.Step = TASKWAITCHALLENGEBLOCK
 
+	fmt.Println("challenge height: ", w.scanner.LastCoinbaseHeight+task.challengeIndex)
 	// request if this block already exit
 	if w.scanner.LastBlockHeight+task.challengeIndex <= w.scanner.LastBlockHeight {
 		return w.HandleTaskAfterChallenge(task)
@@ -78,26 +110,25 @@ func (w *Worker) HandleStartTask(task *Task) error {
 }
 
 func (w *Worker) HandleChallengedTask(task *Task) error {
+	fmt.Println("handler challenged task")
 	// start zkp proof
 	err := w.SolveProblem(task)
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 
-	//submit lottery
 	//give it to miner to submit
-	err = w.SubmitTask(task)
-	if err != nil {
-		return err
-	}
-	w.solvedTaskCh <- task
+	w.scanner.inboundTaskCh <- task
 	return nil
 }
 
 func (w *Worker) HandleTaskAfterChallenge(task *Task) error {
+	fmt.Println("handler task after challenge")
 	header, err := w.scanner.GetHeader(w.scanner.LastBlockHeight + task.challengeIndex)
 	//Drop this task if cannot get header
 	//todo: maybe check if connection still remains
+	//todo: add more tries
 	if err != nil {
 		return err
 	}
@@ -106,8 +137,9 @@ func (w *Worker) HandleTaskAfterChallenge(task *Task) error {
 }
 
 func (w *Worker) HandlerTaskBeforeChallenge(task *Task) error {
+	fmt.Println("handle task before challenge, index ", task.challengeIndex)
 	task.Step = TASKWAITCHALLENGEBLOCK
-	w.scanner.TaskFromWorkerCh <- task
+	w.scanner.inboundTaskCh <- task
 	return nil
 }
 
@@ -115,9 +147,10 @@ func (w *Worker) SolveProblem(task *Task) error {
 	if task.Step != TASKGETCHALLENGEBLOCK {
 		return InvalidStepError
 	}
-	// preimage: address || challenge hash
+	// preimage: keccak(address || challenge hash)
 	addrBytes := task.coinbase.Bytes()
 	preimage := append(addrBytes, task.lottery.ChallengHeaderHash[:]...)
+	preimage = crypto.Keccak256(preimage)
 	mimcHash, proof := w.zkpProver.Prove(preimage)
 	if mimcHash == nil || proof == nil {
 		return ZKPProofError
@@ -125,10 +158,6 @@ func (w *Worker) SolveProblem(task *Task) error {
 	task.lottery.ZkpProof = proof
 	task.lottery.MimcHash = mimcHash
 	task.Step = TASKPROBLEMSOLVED
-	return nil
-}
-
-func (w *Worker) SubmitTask(task *Task) error {
 	return nil
 }
 
