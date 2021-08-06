@@ -5,17 +5,28 @@ import (
 	bn254 "github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/std/hash/mimc"
+	"hash"
+	"sync"
 )
 
 const SEED = "Go Evanesco"
 
-var hash = bn254.NewMiMC(SEED)
+type Hasher struct {
+	mu   sync.Mutex
+	hash hash.Hash
+}
 
-// MimcHash output 32 bytes
-func MimcHash(m []byte) []byte {
-	hash.Reset()
-	hash.Write(m)
-	return hash.Sum(nil)
+var MimcHasher = Hasher{
+	mu:   sync.Mutex{},
+	hash: bn254.NewMiMC(SEED),
+}
+
+func (h *Hasher) Hash(m []byte) []byte {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.hash.Reset()
+	h.hash.Write(m)
+	return h.hash.Sum(nil)
 }
 
 type Circuit struct {
