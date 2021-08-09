@@ -12,7 +12,8 @@ var (
 )
 
 type Lottery struct {
-	Address            common.Address //20 bytes
+	CoinbaseAddr       common.Address
+	MinerAddr          common.Address //20 bytes
 	ChallengHeaderHash [32]byte       //challenge block header Hash
 	Index              [32]byte
 	MimcHash           []byte //32 bytes
@@ -21,8 +22,8 @@ type Lottery struct {
 	Extra              []byte
 }
 
-func (l *Lottery) SetCoinbase(addr common.Address) {
-	l.Address = addr
+func (l *Lottery) SetMinerAddr(addr common.Address) {
+	l.MinerAddr = addr
 }
 
 func (l *Lottery) SetVrfProof(proof []byte) {
@@ -46,7 +47,7 @@ func (l *Lottery) Deserialize() {
 }
 
 func (l *Lottery) Score() *big.Int {
-	result := append(l.Address.Bytes(), l.MimcHash...)
+	result := append(l.MinerAddr.Bytes(), l.MimcHash...)
 	result = append(result, l.Extra...)
 	result = xor(keccak256(result), l.ChallengHeaderHash[:])
 	return new(big.Int).SetBytes(result)

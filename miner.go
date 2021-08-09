@@ -2,12 +2,11 @@ package miner
 
 import (
 	"errors"
-	"fmt"
 	"github.com/Evanesco-Labs/Miner/keypair"
+	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/Evanesco-Labs/Miner/problem"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
 	"io"
 	"sync"
 )
@@ -27,7 +26,8 @@ const (
 )
 
 type Task struct {
-	coinbase         common.Address
+	CoinbaseAddr     common.Address
+	minerAddr        common.Address
 	Step             TaskStep
 	lastCoinBaseHash [32]byte
 	challengeHeader  *types.Header
@@ -41,28 +41,36 @@ func (t *Task) SetHeader(h *types.Header) {
 	t.Step = TASKGETCHALLENGEBLOCK
 }
 
-//SetTaskCoinbase only use in TASKSTART step
-func SetTaskCoinbase(template *Task, coinbase common.Address) Task {
+func (t *Task) SetCoinbaseAddr(coinbaseAddr common.Address) {
+	t.CoinbaseAddr = coinbaseAddr
+}
+
+//SetTaskMinerAddr only use in TASKSTART step
+func SetTaskMinerAddr(template *Task, minerAddr common.Address) Task {
 	if template.Step != TASKSTART {
 		panic("only use it to update task in step TASKSTART")
 	}
+	//Deep Copy task
 	return Task{
-		coinbase:         coinbase,
+		minerAddr:        minerAddr,
+		CoinbaseAddr:     template.CoinbaseAddr,
 		Step:             TASKSTART,
 		lastCoinBaseHash: template.lastCoinBaseHash,
 		challengeIndex:   Height(uint64(0)),
 		lottery: &problem.Lottery{
-			Address: coinbase,
+			MinerAddr:    minerAddr,
+			CoinbaseAddr: template.CoinbaseAddr,
 		},
 	}
 }
 
 type Config struct {
-	CoinbaseList     []keypair.Key
+	MinerList        []keypair.Key
 	MaxWorkerCnt     int32
 	MaxTaskCnt       int32
 	CoinbaseInterval uint64
 	SubmitAdvance    uint64
+	CoinbaseAddr     common.Address
 	//Test
 	HeaderCh chan *types.Header
 	//Test
@@ -75,6 +83,7 @@ type Miner struct {
 	zkpProver        *problem.ProblemProver
 	MaxWorkerCnt     int32
 	MaxTaskCnt       int32
+	CoinbaseAddr     common.Address
 	workers          map[common.Address]*Worker
 	scanner          *Scanner
 	coinbaseInterval Height
@@ -97,18 +106,19 @@ func NewMiner(config Config, r1cs io.Reader, pk io.Reader) (*Miner, error) {
 		zkpProver:        zkpProver,
 		MaxWorkerCnt:     config.MaxWorkerCnt,
 		MaxTaskCnt:       config.MaxTaskCnt,
+		CoinbaseAddr:     config.CoinbaseAddr,
 		workers:          make(map[common.Address]*Worker),
 		coinbaseInterval: Height(config.CoinbaseInterval),
 		submitAdvance:    Height(config.SubmitAdvance),
 		exitCh:           make(chan struct{}),
 	}
-	miner.StartScanner()
+	miner.NewScanner()
 	go miner.Loop()
 	//add new workers
-	for _, key := range config.CoinbaseList {
+	for _, key := range config.MinerList {
 		miner.NewWorker(key)
 	}
-	fmt.Println("start miner")
+	log.Info("miner start")
 	return &miner, nil
 }
 
@@ -123,11 +133,10 @@ func (m *Miner) Close() {
 	close(m.exitCh)
 }
 
-func (m *Miner) NewWorker(coinbase keypair.Key) {
+func (m *Miner) NewWorker(minerKey keypair.Key) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if len(m.workers) == int(m.MaxWorkerCnt) {
-		fmt.Println(ErrorMinerWorkerOutOfRange.Error())
 		log.Error(ErrorMinerWorkerOutOfRange.Error())
 		return
 	}
@@ -135,9 +144,10 @@ func (m *Miner) NewWorker(coinbase keypair.Key) {
 		mu:               sync.RWMutex{},
 		running:          0,
 		MaxTaskCnt:       m.MaxTaskCnt,
-		coinbase:         coinbase.Address,
-		pk:               coinbase.PrivateKey.Public(),
-		sk:               &coinbase.PrivateKey,
+		CoinbaseAddr:     m.CoinbaseAddr,
+		minerAddr:        minerKey.Address,
+		pk:               minerKey.PrivateKey.Public(),
+		sk:               &minerKey.PrivateKey,
 		workingTaskCnt:   0,
 		coinbaseInterval: m.coinbaseInterval,
 		inboundTaskCh:    make(chan *Task),
@@ -147,27 +157,27 @@ func (m *Miner) NewWorker(coinbase keypair.Key) {
 		exitCh:           make(chan struct{}),
 	}
 
-	m.workers[coinbase.Address] = &worker
+	m.workers[minerKey.Address] = &worker
 	go worker.Loop()
 	worker.start()
-	fmt.Println("worker start")
+	log.Debug("worker start")
 }
 
-func (m *Miner) CloseWorker(coinbase common.Address) {
-	if worker, ok := m.workers[coinbase]; ok {
+func (m *Miner) CloseWorker(addr common.Address) {
+	if worker, ok := m.workers[addr]; ok {
 		worker.close()
-		delete(m.workers, coinbase)
+		delete(m.workers, addr)
 	}
 }
 
-func (m *Miner) StopWorker(coinbase common.Address) {
-	if worker, ok := m.workers[coinbase]; ok {
+func (m *Miner) StopWorker(addr common.Address) {
+	if worker, ok := m.workers[addr]; ok {
 		worker.stop()
 	}
 }
 
-func (m *Miner) StartWorker(coinbase common.Address) {
-	if worker, ok := m.workers[coinbase]; ok {
+func (m *Miner) StartWorker(addr common.Address) {
+	if worker, ok := m.workers[addr]; ok {
 		worker.start()
 	}
 }
@@ -180,13 +190,13 @@ func (m *Miner) Loop() {
 		case taskTem := <-m.scanner.outboundTaskCh:
 			if taskTem.Step == TASKSTART {
 				for _, worker := range m.workers {
-					task := SetTaskCoinbase(taskTem, worker.coinbase)
+					task := SetTaskMinerAddr(taskTem, worker.minerAddr)
 					worker.inboundTaskCh <- &task
 				}
 				continue
 			}
 			if taskTem.Step == TASKGETCHALLENGEBLOCK {
-				if worker, ok := m.workers[taskTem.coinbase]; ok {
+				if worker, ok := m.workers[taskTem.minerAddr]; ok {
 					worker.inboundTaskCh <- taskTem
 					continue
 				}
@@ -200,9 +210,10 @@ func (m *Miner) Loop() {
 	}
 }
 
-func (m *Miner) StartScanner() {
+func (m *Miner) NewScanner() {
 	m.scanner = &Scanner{
 		mu:                 sync.RWMutex{},
+		CoinbaseAddr:       m.CoinbaseAddr,
 		BestScore:          zero,
 		LastBlockHeight:    0,
 		CoinbaseInterval:   m.coinbaseInterval,
