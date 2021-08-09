@@ -1,3 +1,3 @@
 # miner
 
-Miner now implements Ethereum block creation and mining at first
+Miner implements the Pow Algorithm of GPow
