@@ -2,13 +2,12 @@ package miner
 
 import (
 	"errors"
-	"fmt"
 	"github.com/Evanesco-Labs/Miner/keypair"
+	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/Evanesco-Labs/Miner/problem"
 	"github.com/Evanesco-Labs/Miner/vrf"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -23,7 +22,8 @@ type Worker struct {
 	mu               sync.RWMutex
 	running          int32
 	MaxTaskCnt       int32
-	coinbase         common.Address
+	CoinbaseAddr     common.Address
+	minerAddr        common.Address
 	pk               *keypair.PublicKey
 	sk               *keypair.PrivateKey
 	workingTaskCnt   int32
@@ -89,9 +89,9 @@ func (w *Worker) close() {
 }
 
 func (w *Worker) HandleStartTask(task *Task) error {
-	fmt.Println("handle start task")
-	task.coinbase = w.coinbase
-	task.lottery.SetCoinbase(w.coinbase)
+	log.Debug("handle start task")
+	task.minerAddr = w.minerAddr
+	task.lottery.SetMinerAddr(w.minerAddr)
 	index, proof := vrf.Evaluate(w.sk, task.lastCoinBaseHash[:])
 	task.challengeIndex = Height(GetChallengeIndex(index, uint64(w.coinbaseInterval)-uint64(w.submitAdvance)))
 
@@ -99,7 +99,7 @@ func (w *Worker) HandleStartTask(task *Task) error {
 	task.lottery.Index = index
 	task.Step = TASKWAITCHALLENGEBLOCK
 
-	fmt.Println("challenge height: ", w.scanner.LastCoinbaseHeight+task.challengeIndex)
+	log.Debug("challenge height: ", w.scanner.LastCoinbaseHeight+task.challengeIndex)
 	// request if this block already exit
 	if w.scanner.LastBlockHeight+task.challengeIndex <= w.scanner.LastBlockHeight {
 		return w.HandleTaskAfterChallenge(task)
@@ -110,11 +110,11 @@ func (w *Worker) HandleStartTask(task *Task) error {
 }
 
 func (w *Worker) HandleChallengedTask(task *Task) error {
-	fmt.Println("handler challenged task")
+	log.Debug("handler challenged task")
 	// start zkp proof
 	err := w.SolveProblem(task)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error(err)
 		return err
 	}
 
@@ -124,7 +124,7 @@ func (w *Worker) HandleChallengedTask(task *Task) error {
 }
 
 func (w *Worker) HandleTaskAfterChallenge(task *Task) error {
-	fmt.Println("handler task after challenge")
+	log.Debug("handler task after challenge")
 	header, err := w.scanner.GetHeader(w.scanner.LastBlockHeight + task.challengeIndex)
 	//Drop this task if cannot get header
 	//todo: maybe check if connection still remains
@@ -137,7 +137,7 @@ func (w *Worker) HandleTaskAfterChallenge(task *Task) error {
 }
 
 func (w *Worker) HandlerTaskBeforeChallenge(task *Task) error {
-	fmt.Println("handle task before challenge, index ", task.challengeIndex)
+	log.Debug("handle task before challenge, index ", task.challengeIndex)
 	task.Step = TASKWAITCHALLENGEBLOCK
 	w.scanner.inboundTaskCh <- task
 	return nil
@@ -148,7 +148,7 @@ func (w *Worker) SolveProblem(task *Task) error {
 		return InvalidStepError
 	}
 	// preimage: keccak(address || challenge hash)
-	addrBytes := task.coinbase.Bytes()
+	addrBytes := task.minerAddr.Bytes()
 	preimage := append(addrBytes, task.lottery.ChallengHeaderHash[:]...)
 	preimage = crypto.Keccak256(preimage)
 	mimcHash, proof := w.zkpProver.Prove(preimage)

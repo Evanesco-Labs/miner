@@ -2,7 +2,7 @@ package problem
 
 import (
 	"bytes"
-	"fmt"
+	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/backend/groth16"
@@ -56,7 +56,7 @@ func ZKPProve(r1cs frontend.CompiledConstraintSystem, pk groth16.ProvingKey, pre
 	c.Hash.Assign(mimchash)
 	proof, err := groth16.Prove(r1cs, pk, &c)
 	if err != nil {
-		fmt.Println("groth16 error: ", err.Error())
+		log.Error("groth16 error: ", err.Error())
 		return nil, nil
 	}
 	buf := bytes.Buffer{}

@@ -2,10 +2,10 @@ package miner
 
 import (
 	"errors"
-	"fmt"
+	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/Evanesco-Labs/Miner/problem"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
 	"math/big"
 	"sync"
 )
@@ -20,6 +20,7 @@ type Height uint64
 
 type Scanner struct {
 	mu                 sync.RWMutex
+	CoinbaseAddr       common.Address
 	BestScore          *big.Int
 	LastBlockHeight    Height
 	CoinbaseInterval   Height
@@ -35,9 +36,12 @@ type Scanner struct {
 func (s *Scanner) NewTask(h *types.Header) Task {
 	return Task{
 		Step:             TASKSTART,
+		CoinbaseAddr:     s.CoinbaseAddr,
 		lastCoinBaseHash: h.Hash(),
 		challengeIndex:   Height(uint64(0)),
-		lottery:          &problem.Lottery{},
+		lottery: &problem.Lottery{
+			CoinbaseAddr: s.CoinbaseAddr,
+		},
 	}
 }
 
@@ -51,10 +55,10 @@ func (s *Scanner) Loop() {
 		case <-s.exitCh:
 			return
 		case header := <-s.headerCh:
-			fmt.Println("best score: ", s.BestScore)
+			log.Debug("best score: ", s.BestScore)
 			height := Height(header.Number.Uint64())
 			index := height - s.LastCoinbaseHeight
-			fmt.Println("index: ", index)
+			log.Debug("index: ", index)
 
 			s.LastBlockHeight = height
 			if s.IfCoinBase(header) {
@@ -92,9 +96,9 @@ func (s *Scanner) Loop() {
 			}
 			if task.Step == TASKPROBLEMSOLVED {
 				taskScore := task.lottery.Score()
-				fmt.Println("get solved score: ", taskScore)
+				log.Debug("get solved score: ", taskScore)
 				if taskScore.Cmp(s.BestScore) != 1 {
-					fmt.Println("less than best", s.BestScore)
+					log.Debug("less than best", s.BestScore)
 					continue
 				}
 				s.BestScore = taskScore
@@ -123,6 +127,7 @@ func (s *Scanner) GetHeader(height Height) (*types.Header, error) {
 //TODO: check if the best before submit
 func (s *Scanner) Submit(task *Task) error {
 	// Submit check if the lottery has the best score
-	fmt.Println("submit lottery", task.coinbase, task.lottery.Score().String())
+	log.Debug("submit lottery\n", "miner: ", task.minerAddr, "\ntask coinbase: ", task.CoinbaseAddr, "\nscore: ", task.lottery.Score().String(),
+		"\n lottery coinbase: ", task.lottery.CoinbaseAddr)
 	return nil
 }
