@@ -14,7 +14,6 @@ func HashToCurve(m []byte) (x, y *big.Int) {
 
 	byteLen := (Params.BitSize + 7) >> 3
 	for x == nil && i < 100 {
-		// TODO: Use a NIST specified DRBG.
 		h.Reset()
 		binary.Write(h, binary.BigEndian, i)
 		h.Write(m)

@@ -126,9 +126,6 @@ func (w *Worker) HandleChallengedTask(task *Task) error {
 func (w *Worker) HandleTaskAfterChallenge(task *Task) error {
 	log.Debug("handler task after challenge")
 	header, err := w.scanner.GetHeader(w.scanner.LastBlockHeight + task.challengeIndex)
-	//Drop this task if cannot get header
-	//todo: maybe check if connection still remains
-	//todo: add more tries
 	if err != nil {
 		return err
 	}

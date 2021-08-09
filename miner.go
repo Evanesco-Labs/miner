@@ -1,14 +1,17 @@
 package miner
 
 import (
+	"context"
 	"errors"
 	"github.com/Evanesco-Labs/Miner/keypair"
 	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/Evanesco-Labs/Miner/problem"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
 	"io"
 	"sync"
+	"time"
 )
 
 var (
@@ -71,10 +74,8 @@ type Config struct {
 	CoinbaseInterval uint64
 	SubmitAdvance    uint64
 	CoinbaseAddr     common.Address
-	//Test
-	HeaderCh chan *types.Header
-	//Test
-	getHeader func(height Height) (*types.Header, error)
+	WsUrl            string
+	RpcTimeout       time.Duration
 }
 
 type Miner struct {
@@ -88,9 +89,8 @@ type Miner struct {
 	scanner          *Scanner
 	coinbaseInterval Height
 	submitAdvance    Height
+	wsUrl            string
 	exitCh           chan struct{}
-
-	//todo: add a block header source
 }
 
 func NewMiner(config Config, r1cs io.Reader, pk io.Reader) (*Miner, error) {
@@ -111,8 +111,14 @@ func NewMiner(config Config, r1cs io.Reader, pk io.Reader) (*Miner, error) {
 		coinbaseInterval: Height(config.CoinbaseInterval),
 		submitAdvance:    Height(config.SubmitAdvance),
 		exitCh:           make(chan struct{}),
+		wsUrl:            config.WsUrl,
 	}
-	miner.NewScanner()
+
+	err = miner.NewScanner()
+	if err != nil {
+		return nil, err
+	}
+
 	go miner.Loop()
 	//add new workers
 	for _, key := range config.MinerList {
@@ -203,14 +209,22 @@ func (m *Miner) Loop() {
 				log.Warn("worker for this task not exist")
 			}
 			if taskTem.Step == TASKSUBMITTED {
-				//todo store submitted lotteries
-				log.Info("new task submitted")
+				//todo: store submitted lotteries for later queries
 			}
 		}
 	}
 }
 
-func (m *Miner) NewScanner() {
+func (m *Miner) NewScanner() error {
+	client, err := rpc.Dial(m.wsUrl)
+
+	headerCh := make(chan *types.Header)
+	sub, err := client.EthSubscribe(context.Background(), headerCh)
+
+	if err != nil {
+		return err
+	}
+
 	m.scanner = &Scanner{
 		mu:                 sync.RWMutex{},
 		CoinbaseAddr:       m.CoinbaseAddr,
@@ -219,16 +233,16 @@ func (m *Miner) NewScanner() {
 		CoinbaseInterval:   m.coinbaseInterval,
 		LastCoinbaseHeight: 0,
 		taskWait:           make(map[Height][]*Task),
-		//todo:change this to real HeaderCh source
-		//Test
-		headerCh:       m.config.HeaderCh,
-		inboundTaskCh:  make(chan *Task),
-		outboundTaskCh: make(chan *Task),
-		exitCh:         make(chan struct{}),
-		getHeader:      m.config.getHeader,
+		headerCh:           headerCh,
+		inboundTaskCh:      make(chan *Task),
+		outboundTaskCh:     make(chan *Task),
+		exitCh:             make(chan struct{}),
+		wsUrl:              m.wsUrl,
+		evaClient:          client,
+		sub:                sub,
+		rpcTimeout:         m.config.RpcTimeout,
 	}
 
 	go m.scanner.Loop()
-
-	//todo: send header to scanner header channel
+	return nil
 }
