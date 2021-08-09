@@ -1,13 +1,18 @@
 package miner
 
 import (
+	"context"
 	"errors"
 	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/Evanesco-Labs/Miner/problem"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 	"sync"
+	"time"
 )
 
 var zero = new(big.Int).SetInt64(int64(0))
@@ -25,11 +30,14 @@ type Scanner struct {
 	LastBlockHeight    Height
 	CoinbaseInterval   Height
 	LastCoinbaseHeight Height
+	evaClient          *rpc.Client
+	sub                ethereum.Subscription
 	taskWait           map[Height][]*Task //single concurrent
 	headerCh           chan *types.Header
 	inboundTaskCh      chan *Task //channel to receive tasks from worker
 	outboundTaskCh     chan *Task //channel to send challenged task to miner
-	getHeader          func(height Height) (*types.Header, error)
+	rpcTimeout         time.Duration
+	wsUrl              string
 	exitCh             chan struct{}
 }
 
@@ -53,6 +61,11 @@ func (s *Scanner) Loop() {
 	for {
 		select {
 		case <-s.exitCh:
+			return
+		case err := <-s.sub.Err():
+			//log.Error(err)
+			//todo: improve robustness
+			panic(err)
 			return
 		case header := <-s.headerCh:
 			log.Debug("best score: ", s.BestScore)
@@ -114,20 +127,42 @@ func (s *Scanner) Loop() {
 	}
 }
 
-//todo: here only for testing, implement this
 func (s *Scanner) IfCoinBase(h *types.Header) bool {
 	return new(big.Int).Mod(h.Number, new(big.Int).SetUint64(uint64(s.CoinbaseInterval))).Cmp(zero) == 0
 }
 
-//todo: GetHeader get challengeHeader from remote or local node, returns nil if not yet this height.
+//todo: improve robustness, add some retries
 func (s *Scanner) GetHeader(height Height) (*types.Header, error) {
-	return s.getHeader(height)
+	num := new(big.Int).SetUint64(uint64(height))
+	ctx, cancel := context.WithTimeout(context.Background(), s.rpcTimeout)
+	defer cancel()
+	var head *types.Header
+	err := s.evaClient.CallContext(ctx, &head, "eth_getBlockByNumber", toBlockNumArg(num), false)
+	if err == nil && head == nil {
+		err = ethereum.NotFound
+	}
+	return head, err
 }
 
-//TODO: check if the best before submit
 func (s *Scanner) Submit(task *Task) error {
 	// Submit check if the lottery has the best score
 	log.Debug("submit lottery\n", "miner: ", task.minerAddr, "\ntask coinbase: ", task.CoinbaseAddr, "\nscore: ", task.lottery.Score().String(),
 		"\n lottery coinbase: ", task.lottery.CoinbaseAddr)
+
+	//todo: rpc call to submit work
+	//ctx, cancel := context.WithTimeout(context.Background(), s.rpcTimeout)
+	//defer cancel()
+	//s.evaClient.CallContext(ctx)
 	return nil
+}
+
+func toBlockNumArg(number *big.Int) string {
+	if number == nil {
+		return "latest"
+	}
+	pending := big.NewInt(-1)
+	if number.Cmp(pending) == 0 {
+		return "pending"
+	}
+	return hexutil.EncodeBig(number)
 }
