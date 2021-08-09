@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
-	"io"
 	"sync"
 	"time"
 )
@@ -76,6 +75,8 @@ type Config struct {
 	CoinbaseAddr     common.Address
 	WsUrl            string
 	RpcTimeout       time.Duration
+	PkPath           string
+	R1CSPath         string
 }
 
 type Miner struct {
@@ -93,8 +94,8 @@ type Miner struct {
 	exitCh           chan struct{}
 }
 
-func NewMiner(config Config, r1cs io.Reader, pk io.Reader) (*Miner, error) {
-	zkpProver, err := problem.NewProblemProver(r1cs, pk)
+func NewMiner(config Config) (*Miner, error) {
+	zkpProver, err := problem.NewProblemProver(config.R1CSPath, config.PkPath)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err

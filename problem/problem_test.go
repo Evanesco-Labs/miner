@@ -16,6 +16,12 @@ import (
 	"time"
 )
 
+var (
+	PkPath = "./provekey.txt"
+	VkPath = "./verifykey.txt"
+	R1csPath = "./r1cs.txt"
+)
+
 func TestNewProvingKey(t *testing.T) {
 	r1cs := CompileCircuit()
 	pk, vk := SetupZKP(r1cs)
@@ -111,17 +117,8 @@ func TestCircuit(t *testing.T) {
 	}
 }
 
-func TestNewProblemProver(t *testing.T) {
-	r1cs := CompileCircuit()
-	pk, vk := SetupZKP(r1cs)
-
-	r1csBuf := new(bytes.Buffer)
-	r1cs.WriteTo(r1csBuf)
-
-	pkBuf := new(bytes.Buffer)
-	pk.WriteTo(pkBuf)
-
-	prover, err := NewProblemProver(r1csBuf, pkBuf)
+func TestNewProverVerifier(t *testing.T) {
+	prover, err := NewProblemProver(R1csPath, PkPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,29 +130,12 @@ func TestNewProblemProver(t *testing.T) {
 
 	mimcHash, proof := prover.Prove(preimage)
 
-	assert.Equal(t, true, ZKPVerify(vk, mimcHash, proof))
-}
-
-func TestNewProblemVerifier(t *testing.T) {
-	r1cs := CompileCircuit()
-	pk, vk := SetupZKP(r1cs)
-
-	vkBuf := new(bytes.Buffer)
-	vk.WriteTo(vkBuf)
-
-	verifier, err := NewProblemVerifier(vkBuf)
-	if err != nil {
+	verifier,err := NewProblemVerifier(VkPath)
+	if err != nil{
 		t.Fatal(err)
 	}
 
-	msg := "test evanesco"
-	hash := sha256.New()
-	hash.Write([]byte(msg))
-	preimage := hash.Sum(nil)
-
-	hashMimc, proof := ZKPProve(r1cs, pk, preimage)
-
-	assert.Equal(t, true, verifier.Verify(preimage, hashMimc, proof))
+	assert.Equal(t, true, verifier.Verify(preimage, mimcHash, proof))
 }
 
 //TestSetupZKP checks setup randomness

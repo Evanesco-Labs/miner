@@ -2,12 +2,19 @@ package problem
 
 import (
 	"bytes"
+	"errors"
 	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
-	"io"
+	"os"
+)
+
+var (
+	ErrorInvalidR1CSPath = errors.New("r1cs path invalid")
+	ErrorInvalidPkPath   = errors.New("proving key path invalid")
+	ErrorInvalidVkPath   = errors.New("verifying key path invalid")
 )
 
 func CompileCircuit() frontend.CompiledConstraintSystem {
@@ -90,14 +97,27 @@ func (p *ProblemProver) Prove(preimage []byte) ([]byte, []byte) {
 	return ZKPProve(p.r1cs, p.pk, preimage)
 }
 
-func NewProblemProver(r1csBuf io.Reader, pkBuf io.Reader) (*ProblemProver, error) {
+func NewProblemProver(r1csPath string, pkPath string) (*ProblemProver, error) {
+	r1csFile, err := os.OpenFile(r1csPath, os.O_RDONLY, 0644)
+	if err != nil {
+		return nil, ErrorInvalidR1CSPath
+	}
+	defer r1csFile.Close()
+
 	r1cs := groth16.NewCS(ecc.BN254)
-	_, err := r1cs.ReadFrom(r1csBuf)
+	_, err = r1cs.ReadFrom(r1csFile)
 	if err != nil {
 		return nil, err
 	}
+
+	pkFile, err := os.OpenFile(pkPath, os.O_RDONLY, 0644)
+	if err != nil {
+		return nil, ErrorInvalidPkPath
+	}
+	defer pkFile.Close()
+
 	pk := groth16.NewProvingKey(ecc.BN254)
-	_, err = pk.ReadFrom(pkBuf)
+	_, err = pk.ReadFrom(pkFile)
 	if err != nil {
 		return nil, err
 	}
@@ -111,9 +131,14 @@ type ProblemVerifier struct {
 	vk groth16.VerifyingKey
 }
 
-func NewProblemVerifier(vkBuf io.Reader) (*ProblemVerifier, error) {
+func NewProblemVerifier(vkPath string) (*ProblemVerifier, error) {
+	vkFile, err := os.OpenFile(vkPath, os.O_RDONLY, 0644)
+	if err != nil {
+		return nil, ErrorInvalidVkPath
+	}
+	defer vkFile.Close()
 	vk := groth16.NewVerifyingKey(ecc.BN254)
-	_, err := vk.ReadFrom(vkBuf)
+	_, err = vk.ReadFrom(vkFile)
 	if err != nil {
 		return nil, err
 	}
