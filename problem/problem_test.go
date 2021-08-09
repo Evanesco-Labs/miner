@@ -3,7 +3,7 @@ package problem
 import (
 	"bytes"
 	"crypto/sha256"
-	"fmt"
+	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark-crypto/ecc/bn254/fr"
 	"github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
@@ -50,7 +50,7 @@ func TestCircuit(t *testing.T) {
 	var mimcCircuit Circuit
 
 	r1cs, err := frontend.Compile(ecc.BN254, backend.GROTH16, &mimcCircuit)
-	fmt.Println("constraints: ", r1cs.GetNbConstraints())
+	log.Debug("constraints: ", r1cs.GetNbConstraints())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,16 +60,16 @@ func TestCircuit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("setup time:", time.Now().Sub(startTime).String())
+	log.Debug("setup time:", time.Now().Sub(startTime).String())
 
 	{
 		buf := bytes.Buffer{}
 		n, err := pk.WriteTo(&buf)
-		fmt.Println("pk size: ", n)
+		log.Debug("pk size: ", n)
 
 		buf = bytes.Buffer{}
 		n, err = vk.WriteTo(&buf)
-		fmt.Println("vk size: ", n)
+		log.Debug("vk size: ", n)
 
 		var witness Circuit
 
@@ -94,12 +94,12 @@ func TestCircuit(t *testing.T) {
 			t.Fatal(err)
 		}
 		duration := time.Now().Sub(start).String()
-		fmt.Println("prove time: ", duration)
+		log.Debug("prove time: ", duration)
 
 		buf = bytes.Buffer{}
 		_, err = proof.WriteTo(&buf)
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 		}
 
 		start = time.Now()
@@ -107,7 +107,7 @@ func TestCircuit(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Println("verify time: ", time.Now().Sub(start).String())
+		log.Debug("verify time: ", time.Now().Sub(start).String())
 	}
 }
 
