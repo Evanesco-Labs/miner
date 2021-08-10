@@ -28,8 +28,8 @@ const (
 )
 
 const (
-	COINBASEINTERVAL = uint64(5)
-	SUBMITADVANCE    = uint64(2)
+	COINBASEINTERVAL = uint64(50)
+	SUBMITADVANCE    = uint64(5)
 	RPCTIMEOUT       = time.Minute
 )
 
@@ -133,7 +133,7 @@ func NewMiner(config Config) (*Miner, error) {
 		log.Error(err.Error())
 		return nil, err
 	}
-
+	log.Info("Init ZKP Problem Prover success!")
 	miner := Miner{
 		mu:               sync.RWMutex{},
 		config:           config,

@@ -48,13 +48,8 @@ func (l *Lottery) Deserialize() {
 
 func (l *Lottery) Score() *big.Int {
 	result := append(l.MinerAddr.Bytes(), l.MimcHash...)
-	result = append(result, l.Extra...)
 	result = xor(keccak256(result), l.ChallengHeaderHash[:])
 	return new(big.Int).SetBytes(result)
-}
-
-func (l *Lottery) CheckDiff() {
-
 }
 
 func IfPassDiff(score []byte, diff *big.Int) bool {
