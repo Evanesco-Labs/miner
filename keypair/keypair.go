@@ -4,13 +4,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"errors"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
-	S256   = btcec.S256()
+	S256   = crypto.S256()
 	Curve  = S256
 	Params = Curve.Params()
 )
@@ -36,32 +35,6 @@ type PrivateKey struct {
 
 func (k *PrivateKey) Public() *PublicKey {
 	return &PublicKey{&k.PublicKey}
-}
-
-func (k *PublicKey) Marshall() []byte {
-	return (*btcec.PublicKey)(k.PublicKey).SerializeCompressed()
-}
-
-func (k *PublicKey) Unmarshall(b []byte) error {
-	pk, err := btcec.ParsePubKey(b, Curve)
-	if err != nil {
-		return err
-	}
-	k.PublicKey = (*ecdsa.PublicKey)(pk)
-	return nil
-}
-
-func (k *PrivateKey) Marshall() []byte {
-	return (*btcec.PrivateKey)(k.PrivateKey).Serialize()
-}
-
-func (k *PrivateKey) Unmarshall(b []byte) error {
-	priv, pub := btcec.PrivKeyFromBytes(Curve, b)
-	if priv == nil || pub == nil {
-		return ErrUnmarshallPrivateKey
-	}
-	k.PrivateKey = (*ecdsa.PrivateKey)(priv)
-	return nil
 }
 
 func GenerateKeyPair() (*PublicKey, *PrivateKey) {

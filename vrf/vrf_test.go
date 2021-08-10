@@ -9,8 +9,6 @@ import (
 	"testing"
 )
 
-var privTest = []byte{44, 213, 72, 196, 72, 214, 71, 131, 51, 90, 31, 207, 230, 165, 83, 129, 200, 77, 131, 220, 225, 7, 19, 120, 201, 229, 143, 206, 24, 145, 202, 159}
-
 func TestECMarshall(t *testing.T) {
 	key, err := ecdsa.GenerateKey(keypair.Curve, rand.Reader)
 	if err != nil {
@@ -34,12 +32,7 @@ func TestECMarshall(t *testing.T) {
 }
 
 func TestVrf(t *testing.T) {
-	var key keypair.PrivateKey
-	err := key.Unmarshall(privTest)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	_, key := keypair.GenerateKeyPair()
 	privateKey, err := keypair.NewPrivateKey(key.PrivateKey)
 	if err != nil {
 		t.Fatal(err)
@@ -48,16 +41,16 @@ func TestVrf(t *testing.T) {
 	publicKey, err := keypair.NewPublicKey(&key.PublicKey)
 
 	message := []byte("go evanesco")
-	hashExp, proof := Evaluate(privateKey, message)
+	rExp, proof := Evaluate(privateKey, message)
 
 	if proof == nil {
 		t.Fatalf("Evaluate fatal")
 	}
 
-	hash, err := ProofToHash(publicKey, message, proof)
+	r, err := ProofToHash(publicKey, message, proof)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, hashExp, hash, "Vrf hash should be the same.")
+	assert.Equal(t, rExp, r, "Vrf hash should be the same.")
 }

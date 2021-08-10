@@ -30,7 +30,7 @@ func (h *Hasher) Hash(m []byte) []byte {
 }
 
 type Circuit struct {
-	PreImage frontend.Variable
+	PreImage frontend.Variable `gnark:",public"`
 	Hash     frontend.Variable `gnark:",public"`
 }
 

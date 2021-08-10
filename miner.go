@@ -27,6 +27,12 @@ const (
 	TASKSUBMITTED
 )
 
+const (
+	COINBASEINTERVAL = uint64(5)
+	SUBMITADVANCE    = uint64(2)
+	RPCTIMEOUT       = time.Minute
+)
+
 type Task struct {
 	CoinbaseAddr     common.Address
 	minerAddr        common.Address
@@ -76,7 +82,34 @@ type Config struct {
 	WsUrl            string
 	RpcTimeout       time.Duration
 	PkPath           string
-	R1CSPath         string
+}
+
+func DefaultConfig() Config {
+	return Config{
+		MinerList:        make([]keypair.Key, 0),
+		MaxWorkerCnt:     1,
+		MaxTaskCnt:       1,
+		CoinbaseInterval: COINBASEINTERVAL,
+		SubmitAdvance:    SUBMITADVANCE,
+		CoinbaseAddr:     common.Address{},
+		WsUrl:            "",
+		RpcTimeout:       RPCTIMEOUT,
+		PkPath:           "./provekey.txt",
+	}
+}
+
+func (config *Config) Customize(minerList []keypair.Key, coinbase common.Address, url string, pkPath string) {
+	config.MinerList = minerList
+
+	config.CoinbaseAddr = coinbase
+
+	if url != "" {
+		config.WsUrl = url
+	}
+
+	if pkPath != "" {
+		config.PkPath = pkPath
+	}
 }
 
 type Miner struct {
@@ -95,7 +128,7 @@ type Miner struct {
 }
 
 func NewMiner(config Config) (*Miner, error) {
-	zkpProver, err := problem.NewProblemProver(config.R1CSPath, config.PkPath)
+	zkpProver, err := problem.NewProblemProver(config.PkPath)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -218,9 +251,12 @@ func (m *Miner) Loop() {
 
 func (m *Miner) NewScanner() error {
 	client, err := rpc.Dial(m.wsUrl)
+	if err != nil {
+		return err
+	}
 
 	headerCh := make(chan *types.Header)
-	sub, err := client.EthSubscribe(context.Background(), headerCh)
+	sub, err := client.EthSubscribe(context.Background(), headerCh, "newHeads")
 
 	if err != nil {
 		return err
