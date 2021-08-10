@@ -41,11 +41,12 @@ type Task struct {
 	challengeHeader  *types.Header
 	challengeIndex   Height
 	lottery          *problem.Lottery
+	signature        []byte
 }
 
 func (t *Task) SetHeader(h *types.Header) {
 	t.challengeHeader = h
-	t.lottery.ChallengHeaderHash = h.Hash()
+	t.lottery.ChallengeHeaderHash = h.Hash()
 	t.Step = TASKGETCHALLENGEBLOCK
 }
 
