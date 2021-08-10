@@ -1,6 +1,7 @@
 package problem
 
 import (
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
@@ -12,14 +13,13 @@ var (
 )
 
 type Lottery struct {
-	CoinbaseAddr       common.Address
-	MinerAddr          common.Address //20 bytes
-	ChallengHeaderHash [32]byte       //challenge block header Hash
-	Index              [32]byte
-	MimcHash           []byte //32 bytes
-	ZkpProof           []byte //
-	VrfProof           []byte
-	Extra              []byte
+	CoinbaseAddr        common.Address `json:"coinbase_addr"`
+	MinerAddr           common.Address `json:"miner_addr"`            //20 bytes
+	ChallengeHeaderHash [32]byte       `json:"challenge_header_hash"` //challenge block header Hash
+	Index               [32]byte       `json:"index"`
+	MimcHash            []byte         `json:"mimc_hash"` //32 bytes
+	ZkpProof            []byte         `json:"zkp_proof"`
+	VrfProof            []byte         `json:"vrf_proof"`
 }
 
 func (l *Lottery) SetMinerAddr(addr common.Address) {
@@ -34,21 +34,17 @@ func (l *Lottery) SetZKPProof(proof []byte) {
 	l.ZkpProof = proof
 }
 
-func (l *Lottery) SetExtra(extra []byte) {
-	l.Extra = extra
+func (l *Lottery) Serialize() ([]byte, error) {
+	return json.Marshal(l)
 }
 
-func (l *Lottery) Serialize() {
-
-}
-
-func (l *Lottery) Deserialize() {
-
+func (l *Lottery) Deserialize(data []byte) error {
+	return json.Unmarshal(data, l)
 }
 
 func (l *Lottery) Score() *big.Int {
 	result := append(l.MinerAddr.Bytes(), l.MimcHash...)
-	result = xor(keccak256(result), l.ChallengHeaderHash[:])
+	result = xor(keccak256(result), l.ChallengeHeaderHash[:])
 	return new(big.Int).SetBytes(result)
 }
 

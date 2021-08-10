@@ -173,3 +173,7 @@ func TestSetupZKP(t *testing.T) {
 	vk2.WriteTo(buf2)
 	assert.Equal(t, false, bytes.Equal(buf1.Bytes(), buf2.Bytes()))
 }
+
+func TestLottery_Serialize(t *testing.T) {
+
+}

@@ -71,7 +71,7 @@ func (s *Scanner) Loop() {
 			height := Height(header.Number.Uint64())
 			//index := height - s.LastCoinbaseHeight
 			index := Height(new(big.Int).Mod(header.Number, new(big.Int).SetUint64(uint64(s.CoinbaseInterval))).Uint64())
-			log.Debug("height:",height," index:", index)
+			log.Debug("height:", height, " index:", index)
 
 			s.LastBlockHeight = height
 			if s.IfCoinBase(header) {
@@ -147,8 +147,12 @@ func (s *Scanner) GetHeader(height Height) (*types.Header, error) {
 
 func (s *Scanner) Submit(task *Task) error {
 	// Submit check if the lottery has the best score
-	log.Debug("submit lottery\n", "miner:", task.minerAddr, "\ntask coinbase:", task.CoinbaseAddr, "\nscore:", task.lottery.Score().String(),
-		"\n lottery coinbase:", task.lottery.CoinbaseAddr)
+	log.Debug("submit lottery\n", "miner:", task.minerAddr,
+		"\ntask coinbase:", task.CoinbaseAddr,
+		"\nscore:", task.lottery.Score().String(),
+		"\nlottery coinbase:", task.lottery.CoinbaseAddr,
+		"\nsignature:", task.signature,
+	)
 
 	//todo: rpc call to submit work
 	//ctx, cancel := context.WithTimeout(context.Background(), s.rpcTimeout)

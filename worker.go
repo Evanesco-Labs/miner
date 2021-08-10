@@ -117,7 +117,6 @@ func (w *Worker) HandleChallengedTask(task *Task) error {
 		log.Error(err)
 		return err
 	}
-
 	//give it to miner to submit
 	w.scanner.inboundTaskCh <- task
 	return nil
@@ -146,7 +145,7 @@ func (w *Worker) SolveProblem(task *Task) error {
 	}
 	// preimage: keccak(address || challenge hash)
 	addrBytes := task.minerAddr.Bytes()
-	preimage := append(addrBytes, task.lottery.ChallengHeaderHash[:]...)
+	preimage := append(addrBytes, task.lottery.ChallengeHeaderHash[:]...)
 	preimage = crypto.Keccak256(preimage)
 	mimcHash, proof := w.zkpProver.Prove(preimage)
 	if mimcHash == nil || proof == nil {
@@ -154,7 +153,26 @@ func (w *Worker) SolveProblem(task *Task) error {
 	}
 	task.lottery.ZkpProof = proof
 	task.lottery.MimcHash = mimcHash
+
+	err := w.SignLottery(task)
+	if err != nil {
+		return err
+	}
 	task.Step = TASKPROBLEMSOLVED
+	return nil
+}
+
+func (w *Worker) SignLottery(task *Task) error {
+	b, err := task.lottery.Serialize()
+	if err != nil {
+		return err
+	}
+	hash := crypto.Keccak256(b)
+	sig, err := crypto.Sign(hash, w.sk.PrivateKey)
+	if err != nil {
+		return err
+	}
+	task.signature = sig
 	return nil
 }
 
