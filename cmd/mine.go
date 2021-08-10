@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"gopkg.in/urfave/cli.v1"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -16,10 +17,6 @@ import (
 )
 
 var (
-	testFlag = cli.BoolFlag{
-		Name:  "test",
-		Usage: "test mining",
-	}
 	configFlag = cli.StringFlag{
 		Name:  "config",
 		Usage: "config file path",
@@ -55,7 +52,6 @@ Start mining
 If you want to test mining without Evanesco network, set the --test flag. 
 `,
 	Flags: []cli.Flag{
-		testFlag,
 		configFlag,
 		urlFlag,
 		pkFlag,
@@ -65,12 +61,46 @@ If you want to test mining without Evanesco network, set the --test flag.
 	Action: StartMining,
 }
 
+type ConfigYML struct {
+	Url             string `yaml:"url"`
+	ZKPProveKeyPath string `yaml:"zkp_prove_key"`
+	MinerKey        string `yaml:"miner_key"`
+	CoinbaseAddress string `yaml:"coinbase_address"`
+}
+
 //todo:load config file
 func StartMining(ctx *cli.Context) {
 	log.InitLog(0, os.Stdout, log.PATH)
 
+	config := miner.DefaultConfig()
+
 	url := ctx.String("url")
 	minerKeyPath := ctx.String("key")
+	coinbaseStr := ctx.String("coinbase")
+	pkPath := ctx.String("pk")
+
+	//load config from yaml file
+	configPath := ctx.String("config")
+	b, err := ioutil.ReadFile(configPath)
+	var configYml ConfigYML
+	if err == nil {
+		err = yaml.Unmarshal(b, &configYml)
+		if err == nil {
+			if (!ctx.IsSet("url")) && configYml.Url != "" {
+				url = configYml.Url
+			}
+			if (!ctx.IsSet("key")) && configYml.MinerKey != "" {
+				minerKeyPath = configYml.MinerKey
+			}
+			if (!ctx.IsSet("coinbase")) && configYml.CoinbaseAddress != "" {
+				coinbaseStr = configYml.CoinbaseAddress
+			}
+			if (!ctx.IsSet("pk")) && configYml.ZKPProveKeyPath != "" {
+				pkPath = configYml.ZKPProveKeyPath
+			}
+		}
+	}
+
 	// Read key from file.
 	keyJson, err := ioutil.ReadFile(minerKeyPath)
 	if err != nil {
@@ -91,7 +121,7 @@ func StartMining(ctx *cli.Context) {
 	minerKeyList := []keypair.Key{minerKey}
 
 	var coinbase common.Address
-	coinbaseStr := ctx.String("coinbase")
+
 	//coinbase address is miner address by default
 	if coinbaseStr == "" {
 		coinbase = minerKey.Address
@@ -99,9 +129,6 @@ func StartMining(ctx *cli.Context) {
 		coinbase = common.HexToAddress(coinbaseStr)
 	}
 
-	pkPath := ctx.String("pk")
-
-	config := miner.DefaultConfig()
 	config.Customize(minerKeyList, coinbase, url, pkPath)
 
 	_, err = miner.NewMiner(config)

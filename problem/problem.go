@@ -99,13 +99,14 @@ func (p *ProblemProver) Prove(preimage []byte) ([]byte, []byte) {
 }
 
 func NewProblemProver(pkPath string) (*ProblemProver, error) {
+	log.Info("Compiling ZKP circuit")
 	r1cs := CompileCircuit()
 	pkFile, err := os.OpenFile(pkPath, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, ErrorInvalidPkPath
 	}
 	defer pkFile.Close()
-
+	log.Info("Loading ZKP prove key")
 	pk := groth16.NewProvingKey(ecc.BN254)
 	_, err = pk.ReadFrom(pkFile)
 	if err != nil {
