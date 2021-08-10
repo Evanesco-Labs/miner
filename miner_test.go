@@ -1,8 +1,8 @@
 package miner
 
 import (
-	"github.com/Evanesco-Labs/Miner/keypair"
-	"github.com/Evanesco-Labs/Miner/log"
+	"github.com/Evanesco-Labs/miner/keypair"
+	"github.com/Evanesco-Labs/miner/log"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core"

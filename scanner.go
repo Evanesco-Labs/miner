@@ -3,8 +3,8 @@ package miner
 import (
 	"context"
 	"errors"
-	"github.com/Evanesco-Labs/Miner/log"
-	"github.com/Evanesco-Labs/Miner/problem"
+	"github.com/Evanesco-Labs/miner/log"
+	"github.com/Evanesco-Labs/miner/problem"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"

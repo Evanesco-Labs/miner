@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	miner "github.com/Evanesco-Labs/Miner"
-	"github.com/Evanesco-Labs/Miner/keypair"
-	"github.com/Evanesco-Labs/Miner/log"
+	miner "github.com/Evanesco-Labs/miner"
+	"github.com/Evanesco-Labs/miner/keypair"
+	"github.com/Evanesco-Labs/miner/log"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common"
