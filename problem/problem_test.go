@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"github.com/Evanesco-Labs/Miner/log"
+	"github.com/Evanesco-Labs/miner/log"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark-crypto/ecc/bn254/fr"
 	"github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	PkPath   = "./provekey.txt"
-	VkPath   = "./verifykey.txt"
-	R1csPath = "./r1cs.txt"
+	PkPath   = "../provekey.txt"
+	VkPath   = "../verifykey.txt"
+	R1csPath = "../r1cs.txt"
 )
 
 func TestNewProvingKey(t *testing.T) {

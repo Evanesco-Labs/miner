@@ -1,4 +1,4 @@
 url: ws://127.0.0.1:8549
-zkp_prove_key: ./provekeytest.txt
+zkp_prove_key: ./provekey.txt
 miner_key: ./keyfile.json
 coinbase_address: ""
