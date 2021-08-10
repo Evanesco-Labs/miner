@@ -7,7 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
-	"github.com/Evanesco-Labs/Miner/keypair"
+	"github.com/Evanesco-Labs/miner/keypair"
 	"math/big"
 )
 

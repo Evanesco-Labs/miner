@@ -2,10 +2,10 @@ package miner
 
 import (
 	"errors"
-	"github.com/Evanesco-Labs/Miner/keypair"
-	"github.com/Evanesco-Labs/Miner/log"
-	"github.com/Evanesco-Labs/Miner/problem"
-	"github.com/Evanesco-Labs/Miner/vrf"
+	"github.com/Evanesco-Labs/miner/keypair"
+	"github.com/Evanesco-Labs/miner/log"
+	"github.com/Evanesco-Labs/miner/problem"
+	"github.com/Evanesco-Labs/miner/vrf"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"

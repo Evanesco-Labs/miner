@@ -3,7 +3,7 @@ package problem
 import (
 	"bytes"
 	"errors"
-	"github.com/Evanesco-Labs/Miner/log"
+	"github.com/Evanesco-Labs/miner/log"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/backend/groth16"

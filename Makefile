@@ -2,4 +2,4 @@ export GO_BUILD=env GO111MODULE=on go build
 export GO_TEST=env GO111MODULE=on go test
 default: build
 build:
-	$(GO_BUILD) -o ./miner github.com/Evanesco-Labs/Miner/cmd
+	$(GO_BUILD) -o ./miner github.com/Evanesco-Labs/miner/cmd
