@@ -115,6 +115,7 @@ func (s *Scanner) Loop() {
 					continue
 				}
 				s.BestScore = taskScore
+				//todo:abort lottery if exceed deadline
 				err := s.Submit(task)
 				if err != nil {
 					// put this tasks to a list and wait for connection success
