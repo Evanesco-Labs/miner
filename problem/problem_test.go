@@ -3,6 +3,7 @@ package problem
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"github.com/Evanesco-Labs/Miner/log"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark-crypto/ecc/bn254/fr"
@@ -11,14 +12,15 @@ import (
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"runtime"
 	"testing"
 	"time"
 )
 
 var (
-	PkPath = "./provekey.txt"
-	VkPath = "./verifykey.txt"
+	PkPath   = "./provekey.txt"
+	VkPath   = "./verifykey.txt"
 	R1csPath = "./r1cs.txt"
 )
 
@@ -47,16 +49,17 @@ func TestZKP(t *testing.T) {
 
 	mimcHash, proof := ZKPProve(r1cs, pk, preimage)
 
-	result := ZKPVerify(vk, mimcHash, proof)
+	result := ZKPVerify(vk,preimage, mimcHash, proof)
 	assert.Equal(t, true, result)
 }
 
 func TestCircuit(t *testing.T) {
+	log.InitLog(0, os.Stdout, log.PATH)
 	runtime.GOMAXPROCS(1)
 	var mimcCircuit Circuit
 
 	r1cs, err := frontend.Compile(ecc.BN254, backend.GROTH16, &mimcCircuit)
-	log.Debug("constraints: ", r1cs.GetNbConstraints())
+	log.Debug("constraints:", r1cs.GetNbConstraints())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,11 +74,11 @@ func TestCircuit(t *testing.T) {
 	{
 		buf := bytes.Buffer{}
 		n, err := pk.WriteTo(&buf)
-		log.Debug("pk size: ", n)
+		log.Debug("pk size:", n)
 
 		buf = bytes.Buffer{}
 		n, err = vk.WriteTo(&buf)
-		log.Debug("vk size: ", n)
+		log.Debug("vk size:", n)
 
 		var witness Circuit
 
@@ -100,7 +103,7 @@ func TestCircuit(t *testing.T) {
 			t.Fatal(err)
 		}
 		duration := time.Now().Sub(start).String()
-		log.Debug("prove time: ", duration)
+		log.Debug("prove time:", duration)
 
 		buf = bytes.Buffer{}
 		_, err = proof.WriteTo(&buf)
@@ -108,17 +111,23 @@ func TestCircuit(t *testing.T) {
 			log.Error(err)
 		}
 
+		var witnessV Circuit
+		witnessV.PreImage.Assign(pre)
+		witnessV.Hash.Assign(sum)
 		start = time.Now()
-		err = groth16.Verify(proof, vk, &witness)
+		err = groth16.Verify(proof, vk, &witnessV)
 		if err != nil {
 			t.Fatal(err)
 		}
-		log.Debug("verify time: ", time.Now().Sub(start).String())
+		log.Debug("verify time:", time.Now().Sub(start).String())
 	}
 }
 
 func TestNewProverVerifier(t *testing.T) {
-	prover, err := NewProblemProver(R1csPath, PkPath)
+	runtime.GOMAXPROCS(1)
+	t1 := time.Now()
+	prover, err := NewProblemProver(PkPath)
+	t2 := time.Now()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,13 +138,19 @@ func TestNewProverVerifier(t *testing.T) {
 	preimage := hash.Sum(nil)
 
 	mimcHash, proof := prover.Prove(preimage)
-
-	verifier,err := NewProblemVerifier(VkPath)
-	if err != nil{
+	t3 := time.Now()
+	verifier, err := NewProblemVerifier(VkPath)
+	if err != nil {
 		t.Fatal(err)
 	}
-
-	assert.Equal(t, true, verifier.Verify(preimage, mimcHash, proof))
+	t4 := time.Now()
+	result := verifier.Verify(preimage, mimcHash, proof)
+	t5 := time.Now()
+	fmt.Println("new prover:", t2.Sub(t1).String())
+	fmt.Println("prove:", t3.Sub(t2).String())
+	fmt.Println("new verifier:", t4.Sub(t3).String())
+	fmt.Println("verify:", t5.Sub(t4).String())
+	assert.Equal(t, true, result)
 }
 
 //TestSetupZKP checks setup randomness

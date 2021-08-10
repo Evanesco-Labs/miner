@@ -63,7 +63,7 @@ func ZKPProve(r1cs frontend.CompiledConstraintSystem, pk groth16.ProvingKey, pre
 	c.Hash.Assign(mimchash)
 	proof, err := groth16.Prove(r1cs, pk, &c)
 	if err != nil {
-		log.Error("groth16 error: ", err.Error())
+		log.Error("groth16 error:", err.Error())
 		return nil, nil
 	}
 	buf := bytes.Buffer{}
@@ -71,7 +71,7 @@ func ZKPProve(r1cs frontend.CompiledConstraintSystem, pk groth16.ProvingKey, pre
 	return mimchash, buf.Bytes()
 }
 
-func ZKPVerify(vk groth16.VerifyingKey, hash []byte, proof []byte) bool {
+func ZKPVerify(vk groth16.VerifyingKey, preimage []byte, hash []byte, proof []byte) bool {
 	p := groth16.NewProof(ecc.BN254)
 	buf := bytes.Buffer{}
 	buf.Write(proof)
@@ -81,6 +81,7 @@ func ZKPVerify(vk groth16.VerifyingKey, hash []byte, proof []byte) bool {
 	}
 	var c Circuit
 	c.Hash.Assign(hash)
+	c.PreImage.Assign(preimage)
 	err = groth16.Verify(p, vk, &c)
 	if err != nil {
 		return false
@@ -97,19 +98,8 @@ func (p *ProblemProver) Prove(preimage []byte) ([]byte, []byte) {
 	return ZKPProve(p.r1cs, p.pk, preimage)
 }
 
-func NewProblemProver(r1csPath string, pkPath string) (*ProblemProver, error) {
-	r1csFile, err := os.OpenFile(r1csPath, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, ErrorInvalidR1CSPath
-	}
-	defer r1csFile.Close()
-
-	r1cs := groth16.NewCS(ecc.BN254)
-	_, err = r1cs.ReadFrom(r1csFile)
-	if err != nil {
-		return nil, err
-	}
-
+func NewProblemProver(pkPath string) (*ProblemProver, error) {
+	r1cs := CompileCircuit()
 	pkFile, err := os.OpenFile(pkPath, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, ErrorInvalidPkPath
@@ -148,9 +138,9 @@ func NewProblemVerifier(vkPath string) (*ProblemVerifier, error) {
 }
 
 func (v *ProblemVerifier) Verify(preimage []byte, mimcHash []byte, proof []byte) bool {
-	hashExp := MimcHasher.Hash(preimage)
-	if !bytes.Equal(hashExp, mimcHash) {
-		return false
-	}
-	return ZKPVerify(v.vk, mimcHash, proof)
+	//hashExp := MimcHasher.Hash(preimage)
+	//if !bytes.Equal(hashExp, mimcHash) {
+	//	return false
+	//}
+	return ZKPVerify(v.vk, preimage, mimcHash, proof)
 }

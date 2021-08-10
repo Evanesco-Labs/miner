@@ -99,7 +99,7 @@ func (w *Worker) HandleStartTask(task *Task) error {
 	task.lottery.Index = index
 	task.Step = TASKWAITCHALLENGEBLOCK
 
-	log.Debug("challenge height: ", w.scanner.LastCoinbaseHeight+task.challengeIndex)
+	log.Debug("challenge height:", w.scanner.LastCoinbaseHeight+task.challengeIndex)
 	// request if this block already exit
 	if w.scanner.LastBlockHeight+task.challengeIndex <= w.scanner.LastBlockHeight {
 		return w.HandleTaskAfterChallenge(task)
