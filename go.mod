@@ -15,5 +15,5 @@ require (
 replace (
 	github.com/consensys/gnark v0.4.0 => github.com/Evanesco-Labs/gnark v0.4.1-0.20210810081143-48fdd25c1073
 	github.com/consensys/gnark-crypto v0.4.1-0.20210428083642-6bd055b79906 => github.com/Evanesco-Labs/gnark-crypto v0.4.1-0.20210810075744-74f0c8ad40b3
-	github.com/ethereum/go-ethereum v1.10.6 => github.com/Evanesco-Labs/go-evanesco v0.0.0-20210716035421-2ff3e25ccac1
+	github.com/ethereum/go-ethereum v1.10.6 => github.com/Evanesco-Labs/go-evanesco v0.0.0-20210811064651-f2d1dc44ac1c
 )

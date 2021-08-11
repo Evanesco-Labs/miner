@@ -28,8 +28,8 @@ const (
 )
 
 const (
-	COINBASEINTERVAL = uint64(50)
-	SUBMITADVANCE    = uint64(5)
+	COINBASEINTERVAL = uint64(100)
+	SUBMITADVANCE    = uint64(20)
 	RPCTIMEOUT       = time.Minute
 )
 
