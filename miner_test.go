@@ -4,25 +4,17 @@ import (
 	"github.com/Evanesco-Labs/miner/keypair"
 	"github.com/Evanesco-Labs/miner/log"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/params"
 	"os"
 	"testing"
 	"time"
 )
 
 var (
-	testdb     = rawdb.NewMemoryDatabase()
-	gspec      = &core.Genesis{Config: params.TestChainConfig}
-	genesis    = gspec.MustCommit(testdb)
-	blocks, _  = core.GenerateChain(params.TestChainConfig, genesis, ethash.NewFaker(), testdb, 100, nil)
 	testURL    = "ws://127.0.0.1:8549"
 	testPKPath = "./provekeytest.txt"
 )
 
-func DefaultTestConfig() Config {
+func defaultTestConfig() Config {
 	return Config{
 		MinerList:        make([]keypair.Key, 0),
 		MaxWorkerCnt:     10,
@@ -55,7 +47,7 @@ func TestMiner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	config := DefaultTestConfig()
+	config := defaultTestConfig()
 	config.Customize(minerList, coinbaseKey.Address, testURL, testPKPath)
 
 	miner, err := NewMiner(config)

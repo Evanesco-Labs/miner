@@ -147,11 +147,10 @@ func (s *Scanner) GetHeader(height Height) (*types.Header, error) {
 
 func (s *Scanner) Submit(task *Task) error {
 	// Submit check if the lottery has the best score
-	log.Debug("submit lottery\n", "miner:", task.minerAddr,
-		"\ntask coinbase:", task.CoinbaseAddr,
+	log.Info("submit new lottery",
+		"\nminer:", task.minerAddr,
 		"\nscore:", task.lottery.Score().String(),
-		"\nlottery coinbase:", task.lottery.CoinbaseAddr,
-		"\nsignature:", task.signature,
+		"\ncoinbase:", task.lottery.CoinbaseAddr,
 	)
 
 	//todo: rpc call to submit work
@@ -159,6 +158,89 @@ func (s *Scanner) Submit(task *Task) error {
 	//defer cancel()
 	//s.evaClient.CallContext(ctx)
 	return nil
+}
+
+type TestScanner struct {
+	Scanner
+	testGetHeader func(height Height) (*types.Header, error)
+}
+
+func (ts *TestScanner) GetHeader(height Height) (*types.Header, error) {
+	header, err := ts.testGetHeader(height)
+	if err != nil {
+		return nil, err
+	}
+	if header == nil {
+		return nil, errors.New("GetHeader return nil header")
+	}
+	return header, nil
+}
+
+func (s *TestScanner) Loop() {
+	for {
+		select {
+		case <-s.exitCh:
+			return
+		case header := <-s.headerCh:
+			log.Debug("best score:", s.BestScore)
+			height := Height(header.Number.Uint64())
+			//index := height - s.LastCoinbaseHeight
+			index := Height(new(big.Int).Mod(header.Number, new(big.Int).SetUint64(uint64(s.CoinbaseInterval))).Uint64())
+			log.Debug("height:", height, " index:", index)
+
+			s.LastBlockHeight = height
+			if s.IfCoinBase(header) {
+				task := s.NewTask(header)
+				s.taskWait = make(map[Height][]*Task)
+				s.outboundTaskCh <- &task
+				s.LastCoinbaseHeight = height
+				s.BestScore = zero
+			}
+
+			if taskList, ok := s.taskWait[index]; ok {
+				//add challengeHeader and send tasks to miner task channel
+				for _, task := range taskList {
+					if task.Step != TASKWAITCHALLENGEBLOCK {
+						log.Error(InvalidTaskStepErr.Error())
+						continue
+					}
+					task.SetHeader(header)
+					s.outboundTaskCh <- task
+				}
+				delete(s.taskWait, index)
+				continue
+			}
+
+		case task := <-s.inboundTaskCh:
+			if task.Step == TASKWAITCHALLENGEBLOCK {
+				if taskList, ok := s.taskWait[task.challengeIndex]; ok {
+					taskList = append(taskList, task)
+					s.taskWait[task.challengeIndex] = taskList
+					continue
+				}
+				taskList := []*Task{task}
+				s.taskWait[task.challengeIndex] = taskList
+				continue
+			}
+			if task.Step == TASKPROBLEMSOLVED {
+				taskScore := task.lottery.Score()
+				log.Debug("get solved score:", taskScore)
+				if taskScore.Cmp(s.BestScore) != 1 {
+					log.Debug("less than best", s.BestScore)
+					continue
+				}
+				s.BestScore = taskScore
+				//todo:abort lottery if exceed deadline
+				err := s.Submit(task)
+				if err != nil {
+					// put this tasks to a list and wait for connection success
+					log.Error(err.Error())
+				}
+				task.Step = TASKSUBMITTED
+				s.outboundTaskCh <- task
+			}
+		}
+	}
 }
 
 func toBlockNumArg(number *big.Int) string {

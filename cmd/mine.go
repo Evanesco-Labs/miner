@@ -8,13 +8,21 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 	"gopkg.in/urfave/cli.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
+
+const BlockInterval = time.Second * 6
 
 var (
 	configFlag = cli.StringFlag{
@@ -68,11 +76,10 @@ type ConfigYML struct {
 	CoinbaseAddress string `yaml:"coinbase_address"`
 }
 
-//todo:load config file
 func StartMining(ctx *cli.Context) {
 	log.InitLog(0, os.Stdout, log.PATH)
 
-	config := miner.DefaultConfig()
+	config := miner.DefaultTestConfig()
 
 	url := ctx.String("url")
 	minerKeyPath := ctx.String("key")
@@ -129,7 +136,38 @@ func StartMining(ctx *cli.Context) {
 		coinbase = common.HexToAddress(coinbaseStr)
 	}
 
-	config.Customize(minerKeyList, coinbase, url, pkPath)
+	headerCh := make(chan *types.Header)
+	//start local test chain
+	testdb := rawdb.NewMemoryDatabase()
+	gspec := &core.Genesis{Config: params.TestChainConfig}
+	genesis := gspec.MustCommit(testdb)
+	hc, err := core.NewHeaderChain(testdb, params.TestChainConfig, ethash.NewFaker(), func() bool { return false })
+	if err != nil {
+		panic(err)
+	}
+	hc.SetGenesis(genesis.Header())
+	parent := genesis
+	go func() {
+		ticker := time.Tick(BlockInterval)
+		for {
+			headerCh <- hc.CurrentHeader()
+			<-ticker
+			blocks, _ := core.GenerateChain(params.TestChainConfig, parent, ethash.NewFaker(), testdb, 1, nil)
+			parent = blocks[0]
+
+			headers := []*types.Header{blocks[0].Header()}
+			_, err := hc.InsertHeaderChain(headers, time.Now())
+			if err != nil {
+				panic(err)
+			}
+		}
+	}()
+
+	getHeader := func(height miner.Height) (*types.Header, error) {
+		return hc.GetHeaderByNumber(uint64(height)), nil
+	}
+
+	config.Customize(minerKeyList, coinbase, url, pkPath, getHeader, headerCh)
 
 	_, err = miner.NewMiner(config)
 	if err != nil {

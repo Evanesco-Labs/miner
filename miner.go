@@ -1,14 +1,12 @@
 package miner
 
 import (
-	"context"
 	"errors"
 	"github.com/Evanesco-Labs/miner/keypair"
 	"github.com/Evanesco-Labs/miner/log"
 	"github.com/Evanesco-Labs/miner/problem"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
 	"sync"
 	"time"
 )
@@ -19,6 +17,8 @@ var (
 
 type TaskStep int
 
+type GetHeaderFunc func(height Height) (*types.Header, error)
+
 const (
 	TASKSTART TaskStep = iota
 	TASKWAITCHALLENGEBLOCK
@@ -28,8 +28,8 @@ const (
 )
 
 const (
-	COINBASEINTERVAL = uint64(50)
-	SUBMITADVANCE    = uint64(5)
+	COINBASEINTERVAL = uint64(100)
+	SUBMITADVANCE    = uint64(20)
 	RPCTIMEOUT       = time.Minute
 )
 
@@ -113,22 +113,51 @@ func (config *Config) Customize(minerList []keypair.Key, coinbase common.Address
 	}
 }
 
+type TestConfig struct {
+	Config
+	getHeader func(height Height) (*types.Header, error)
+	headerCh  chan *types.Header
+}
+
+func DefaultTestConfig() TestConfig {
+	return TestConfig{
+		Config: DefaultConfig(),
+	}
+}
+
+func (config *TestConfig) Customize(minerList []keypair.Key, coinbase common.Address, url string, pkPath string, headerFunc GetHeaderFunc, headerCh chan *types.Header) {
+	config.MinerList = minerList
+
+	config.CoinbaseAddr = coinbase
+
+	if url != "" {
+		config.WsUrl = url
+	}
+
+	if pkPath != "" {
+		config.PkPath = pkPath
+	}
+
+	config.getHeader = headerFunc
+	config.headerCh = headerCh
+}
+
 type Miner struct {
 	mu               sync.RWMutex
-	config           Config
+	config           TestConfig
 	zkpProver        *problem.ProblemProver
 	MaxWorkerCnt     int32
 	MaxTaskCnt       int32
 	CoinbaseAddr     common.Address
 	workers          map[common.Address]*Worker
-	scanner          *Scanner
+	scanner          *TestScanner
 	coinbaseInterval Height
 	submitAdvance    Height
 	wsUrl            string
 	exitCh           chan struct{}
 }
 
-func NewMiner(config Config) (*Miner, error) {
+func NewMiner(config TestConfig) (*Miner, error) {
 	zkpProver, err := problem.NewProblemProver(config.PkPath)
 	if err != nil {
 		log.Error(err.Error())
@@ -251,34 +280,23 @@ func (m *Miner) Loop() {
 }
 
 func (m *Miner) NewScanner() error {
-	client, err := rpc.Dial(m.wsUrl)
-	if err != nil {
-		return err
-	}
-
-	headerCh := make(chan *types.Header)
-	sub, err := client.EthSubscribe(context.Background(), headerCh, "newHeads")
-
-	if err != nil {
-		return err
-	}
-
-	m.scanner = &Scanner{
-		mu:                 sync.RWMutex{},
-		CoinbaseAddr:       m.CoinbaseAddr,
-		BestScore:          zero,
-		LastBlockHeight:    0,
-		CoinbaseInterval:   m.coinbaseInterval,
-		LastCoinbaseHeight: 0,
-		taskWait:           make(map[Height][]*Task),
-		headerCh:           headerCh,
-		inboundTaskCh:      make(chan *Task),
-		outboundTaskCh:     make(chan *Task),
-		exitCh:             make(chan struct{}),
-		wsUrl:              m.wsUrl,
-		evaClient:          client,
-		sub:                sub,
-		rpcTimeout:         m.config.RpcTimeout,
+	m.scanner = &TestScanner{
+		Scanner: Scanner{
+			mu:                 sync.RWMutex{},
+			CoinbaseAddr:       m.CoinbaseAddr,
+			BestScore:          zero,
+			LastBlockHeight:    0,
+			CoinbaseInterval:   m.coinbaseInterval,
+			LastCoinbaseHeight: 0,
+			taskWait:           make(map[Height][]*Task),
+			inboundTaskCh:      make(chan *Task),
+			outboundTaskCh:     make(chan *Task),
+			exitCh:             make(chan struct{}),
+			wsUrl:              m.wsUrl,
+			rpcTimeout:         m.config.RpcTimeout,
+			headerCh:           m.config.headerCh,
+		},
+		testGetHeader: m.config.getHeader,
 	}
 
 	go m.scanner.Loop()
