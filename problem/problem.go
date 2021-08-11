@@ -106,7 +106,7 @@ func NewProblemProver(pkPath string) (*ProblemProver, error) {
 		return nil, ErrorInvalidPkPath
 	}
 	defer pkFile.Close()
-	log.Info("Loading ZKP prove key")
+	log.Info("Loading ZKP prove key. This takes a few minutes")
 	pk := groth16.NewProvingKey(ecc.BN254)
 	_, err = pk.ReadFrom(pkFile)
 	if err != nil {
