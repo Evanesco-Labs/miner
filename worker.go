@@ -7,6 +7,7 @@ import (
 	"github.com/Evanesco-Labs/miner/problem"
 	"github.com/Evanesco-Labs/miner/vrf"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 	"sync"
@@ -100,9 +101,11 @@ func (w *Worker) HandleStartTask(task *Task) error {
 	task.Step = TASKWAITCHALLENGEBLOCK
 
 	log.Debug("challenge height:", w.scanner.LastCoinbaseHeight+task.challengeIndex)
+
 	// request if this block already exit
-	if w.scanner.LastBlockHeight+task.challengeIndex <= w.scanner.LastBlockHeight {
-		return w.HandleTaskAfterChallenge(task)
+	header, err := w.scanner.GetHeader(w.scanner.LastCoinbaseHeight + task.challengeIndex)
+	if header != nil && err == nil {
+		return w.HandleTaskAfterChallenge(header, task)
 	}
 
 	// waiting for challenge block exist
@@ -122,12 +125,8 @@ func (w *Worker) HandleChallengedTask(task *Task) error {
 	return nil
 }
 
-func (w *Worker) HandleTaskAfterChallenge(task *Task) error {
+func (w *Worker) HandleTaskAfterChallenge(header *types.Header, task *Task) error {
 	log.Debug("handler task after challenge")
-	header, err := w.scanner.GetHeader(w.scanner.LastBlockHeight + task.challengeIndex)
-	if err != nil {
-		return err
-	}
 	task.SetHeader(header)
 	return w.HandleChallengedTask(task)
 }
