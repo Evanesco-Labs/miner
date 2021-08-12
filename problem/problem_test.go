@@ -144,7 +144,7 @@ func TestNewProverVerifier(t *testing.T) {
 		t.Fatal(err)
 	}
 	t4 := time.Now()
-	result := verifier.Verify(preimage, mimcHash, proof)
+	result := verifier.VerifyZKP(preimage, mimcHash, proof)
 	t5 := time.Now()
 	fmt.Println("new prover:", t2.Sub(t1).String())
 	fmt.Println("prove:", t3.Sub(t2).String())
