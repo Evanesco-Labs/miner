@@ -41,7 +41,7 @@ type Task struct {
 	challengeHeader  *types.Header
 	challengeIndex   Height
 	lottery          *problem.Lottery
-	signature        []byte
+	signature        [65]byte
 }
 
 func (t *Task) SetHeader(h *types.Header) {
@@ -116,7 +116,7 @@ func (config *Config) Customize(minerList []keypair.Key, coinbase common.Address
 type Miner struct {
 	mu               sync.RWMutex
 	config           Config
-	zkpProver        *problem.ProblemProver
+	zkpProver        *problem.Prover
 	MaxWorkerCnt     int32
 	MaxTaskCnt       int32
 	CoinbaseAddr     common.Address

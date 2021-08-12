@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"math/big"
 	"sync"
 	"sync/atomic"
 )
@@ -32,7 +31,7 @@ type Worker struct {
 	submitAdvance    Height
 	inboundTaskCh    chan *Task //channel to get task from miner
 	scanner          *Scanner
-	zkpProver        *problem.ProblemProver
+	zkpProver        *problem.Prover
 	exitCh           chan struct{}
 }
 
@@ -94,7 +93,7 @@ func (w *Worker) HandleStartTask(task *Task) error {
 	task.minerAddr = w.minerAddr
 	task.lottery.SetMinerAddr(w.minerAddr)
 	index, proof := vrf.Evaluate(w.sk, task.lastCoinBaseHash[:])
-	task.challengeIndex = Height(GetChallengeIndex(index, uint64(w.coinbaseInterval)-uint64(w.submitAdvance)))
+	task.challengeIndex = Height(problem.GetChallengeIndex(index, uint64(w.coinbaseInterval)-uint64(w.submitAdvance)))
 
 	task.lottery.VrfProof = proof
 	task.lottery.Index = index
@@ -171,12 +170,7 @@ func (w *Worker) SignLottery(task *Task) error {
 	if err != nil {
 		return err
 	}
-	task.signature = sig
+	copy(task.signature[:],sig)
 	return nil
 }
 
-func GetChallengeIndex(index [32]byte, interval uint64) uint64 {
-	n := new(big.Int).SetBytes(index[:])
-	module := new(big.Int).SetUint64(interval)
-	return new(big.Int).Mod(n, module).Uint64()
-}

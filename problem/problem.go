@@ -2,14 +2,22 @@ package problem
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"github.com/Evanesco-Labs/miner/keypair"
 	"github.com/Evanesco-Labs/miner/log"
+	"github.com/Evanesco-Labs/miner/vrf"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"math/big"
 	"os"
 )
+
+type GetHeaderByNum = func(uint642 uint64) (*types.Header, error)
 
 var (
 	ErrorInvalidR1CSPath = errors.New("r1cs path invalid")
@@ -89,16 +97,16 @@ func ZKPVerify(vk groth16.VerifyingKey, preimage []byte, hash []byte, proof []by
 	return true
 }
 
-type ProblemProver struct {
+type Prover struct {
 	r1cs frontend.CompiledConstraintSystem
 	pk   groth16.ProvingKey
 }
 
-func (p *ProblemProver) Prove(preimage []byte) ([]byte, []byte) {
+func (p *Prover) Prove(preimage []byte) ([]byte, []byte) {
 	return ZKPProve(p.r1cs, p.pk, preimage)
 }
 
-func NewProblemProver(pkPath string) (*ProblemProver, error) {
+func NewProblemProver(pkPath string) (*Prover, error) {
 	log.Info("Compiling ZKP circuit")
 	r1cs := CompileCircuit()
 	pkFile, err := os.OpenFile(pkPath, os.O_RDONLY, 0644)
@@ -112,17 +120,20 @@ func NewProblemProver(pkPath string) (*ProblemProver, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ProblemProver{
+	return &Prover{
 		r1cs: r1cs,
 		pk:   pk,
 	}, nil
 }
 
-type ProblemVerifier struct {
-	vk groth16.VerifyingKey
+type Verifier struct {
+	coinbaseInterval uint64
+	submitAdvance    uint64
+	vk               groth16.VerifyingKey
+	getHeaderByNum   GetHeaderByNum
 }
 
-func NewProblemVerifier(vkPath string) (*ProblemVerifier, error) {
+func NewProblemVerifier(vkPath string, interval, advance uint64, getHeaderByNum GetHeaderByNum) (*Verifier, error) {
 	vkFile, err := os.OpenFile(vkPath, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, ErrorInvalidVkPath
@@ -133,15 +144,67 @@ func NewProblemVerifier(vkPath string) (*ProblemVerifier, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ProblemVerifier{
-		vk: vk,
+	return &Verifier{
+		coinbaseInterval: interval,
+		submitAdvance:    advance,
+		vk:               vk,
+		getHeaderByNum:   getHeaderByNum,
 	}, nil
 }
 
-func (v *ProblemVerifier) Verify(preimage []byte, mimcHash []byte, proof []byte) bool {
-	//hashExp := MimcHasher.Hash(preimage)
-	//if !bytes.Equal(hashExp, mimcHash) {
-	//	return false
-	//}
+func (v *Verifier) VerifyZKP(preimage []byte, mimcHash []byte, proof []byte) bool {
 	return ZKPVerify(v.vk, preimage, mimcHash, proof)
+}
+
+//todo: add additional check if the lottery miner pledged
+func (v *Verifier) VerifyLottery(lottery *Lottery, sigBytes []byte, lastCoinbaseHeader types.Header) bool {
+	msg, err := json.Marshal(lottery)
+	if err != nil {
+		return false
+	}
+
+	msgHash := keccak256(msg)
+	ecdsaPK, err := crypto.SigToPub(msgHash, sigBytes)
+	if err != nil {
+		return false
+	}
+	pk, err := keypair.NewPublicKey(ecdsaPK)
+	if err != nil {
+		return false
+	}
+
+	if crypto.PubkeyToAddress(*ecdsaPK) != lottery.MinerAddr {
+		return false
+	}
+
+	lastCoinbaseHash := lastCoinbaseHeader.Hash()
+	index, err := vrf.ProofToHash(pk, lastCoinbaseHash[:], lottery.VrfProof)
+	if err != nil {
+		return false
+	}
+
+	if index != lottery.Index {
+		return false
+	}
+
+	challengeHeight := lastCoinbaseHeader.Number.Uint64() + GetChallengeIndex(index, uint64(v.coinbaseInterval)-uint64(v.submitAdvance))
+	challengeHeader, err := v.getHeaderByNum(challengeHeight)
+	if err != nil || challengeHeader == nil {
+		return false
+	}
+
+	if challengeHeader.Hash() != lottery.ChallengeHeaderHash {
+		return false
+	}
+
+	addrBytes := lottery.MinerAddr.Bytes()
+	preimage := append(addrBytes, lottery.ChallengeHeaderHash[:]...)
+	preimage = crypto.Keccak256(preimage)
+	return v.VerifyZKP(preimage, lottery.MimcHash, lottery.VrfProof)
+}
+
+func GetChallengeIndex(index [32]byte, interval uint64) uint64 {
+	n := new(big.Int).SetBytes(index[:])
+	module := new(big.Int).SetUint64(interval)
+	return new(big.Int).Mod(n, module).Uint64()
 }
