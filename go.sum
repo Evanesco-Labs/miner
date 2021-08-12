@@ -50,6 +50,8 @@ github.com/Evanesco-Labs/gnark-crypto v0.4.1-0.20210810075744-74f0c8ad40b3 h1:FW
 github.com/Evanesco-Labs/gnark-crypto v0.4.1-0.20210810075744-74f0c8ad40b3/go.mod h1:815PAHg3wvysy0SyIqanF8gZ0Y1wjk/hrDHD/iT88+Q=
 github.com/Evanesco-Labs/go-evanesco v0.0.0-20210811064651-f2d1dc44ac1c h1:q1ems6Bju0rvd8CrvaxlgQyIefk8ZPj5Wb0TVJNyXg4=
 github.com/Evanesco-Labs/go-evanesco v0.0.0-20210811064651-f2d1dc44ac1c/go.mod h1:z+OPdsozlny/RN6QSTQLIR2f/1NqLNv/Y608reeqqaQ=
+github.com/Evanesco-Labs/go-evanesco v0.0.0-20210812025646-d5acdd08ab7d h1:mXcm1/RpPxTbZgDys7m2fsW3JU0L5q+0LOwq6aSjufQ=
+github.com/Evanesco-Labs/go-evanesco v0.0.0-20210812025646-d5acdd08ab7d/go.mod h1:z+OPdsozlny/RN6QSTQLIR2f/1NqLNv/Y608reeqqaQ=
 github.com/Kubuxu/go-os-helper v0.0.1/go.mod h1:N8B+I7vPCT80IcP58r50u4+gEEcsZETFUpAzWW2ep1Y=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 h1:fLjPD/aNc3UIOA6tDi6QXUemppXK3P9BI7mr2hd6gx8=
