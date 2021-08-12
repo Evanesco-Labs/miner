@@ -163,7 +163,7 @@ func NewMiner(config TestConfig) (*Miner, error) {
 		log.Error(err.Error())
 		return nil, err
 	}
-	log.Info("Init ZKP Problem Prover success!")
+	log.Info("Init ZKP Problem Worker success!")
 	miner := Miner{
 		mu:               sync.RWMutex{},
 		config:           config,
