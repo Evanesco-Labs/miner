@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 )
 
@@ -68,10 +69,9 @@ type ConfigYML struct {
 	CoinbaseAddress string `yaml:"coinbase_address"`
 }
 
-//todo:load config file
 func StartMining(ctx *cli.Context) {
-	log.InitLog(0, os.Stdout, log.PATH)
-
+	log.InitLog(log.InfoLog, os.Stdout, log.PATH)
+	runtime.GOMAXPROCS(1)
 	config := miner.DefaultConfig()
 
 	url := ctx.String("url")

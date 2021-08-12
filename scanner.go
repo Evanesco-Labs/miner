@@ -147,11 +147,10 @@ func (s *Scanner) GetHeader(height Height) (*types.Header, error) {
 
 func (s *Scanner) Submit(task *Task) error {
 	// Submit check if the lottery has the best score
-	log.Debug("submit lottery\n", "miner:", task.minerAddr,
-		"\ntask coinbase:", task.CoinbaseAddr,
+	log.Info("submit work\n",
+		"\nminer:", task.minerAddr,
+		"\ncoinbase address:", task.CoinbaseAddr,
 		"\nscore:", task.lottery.Score().String(),
-		"\nlottery coinbase:", task.lottery.CoinbaseAddr,
-		"\nsignature:", task.signature,
 	)
 
 	//todo: rpc call to submit work
