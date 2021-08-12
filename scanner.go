@@ -147,7 +147,7 @@ func (s *Scanner) GetHeader(height Height) (*types.Header, error) {
 
 func (s *Scanner) Submit(task *Task) error {
 	// Submit check if the lottery has the best score
-	log.Info("submit new lottery",
+	log.Info("submit new work",
 		"\nminer:", task.minerAddr,
 		"\nscore:", task.lottery.Score().String(),
 		"\ncoinbase:", task.lottery.CoinbaseAddr,

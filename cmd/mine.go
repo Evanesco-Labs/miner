@@ -78,7 +78,7 @@ type ConfigYML struct {
 }
 
 func StartMining(ctx *cli.Context) {
-	log.InitLog(0, os.Stdout, log.PATH)
+	log.InitLog(log.InfoLog, os.Stdout, log.PATH)
 	runtime.GOMAXPROCS(1)
 	config := miner.DefaultTestConfig()
 
