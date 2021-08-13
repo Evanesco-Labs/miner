@@ -148,8 +148,10 @@ func StartMining(ctx *cli.Context) {
 	}
 	hc.SetGenesis(genesis.Header())
 	parent := genesis
+
 	go func() {
 		ticker := time.Tick(BlockInterval)
+		<-miner.FinishInitProver
 		for {
 			headerCh <- hc.CurrentHeader()
 			<-ticker

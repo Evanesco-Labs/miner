@@ -101,7 +101,7 @@ func (w *Worker) HandleStartTask(task *Task) error {
 	task.lottery.Index = index
 	task.Step = TASKWAITCHALLENGEBLOCK
 
-	log.Debug("challenge height:", w.scanner.LastCoinbaseHeight+task.challengeIndex, "index:", task.challengeIndex)
+	log.Info("vrf finished","challenge height:", w.scanner.LastCoinbaseHeight+task.challengeIndex, "index:", task.challengeIndex)
 	// request if this block already exit
 	//if w.scanner.LastBlockHeight+task.challengeIndex <= w.scanner.LastBlockHeight {
 	//	return w.HandleTaskAfterChallenge(task)
@@ -116,13 +116,14 @@ func (w *Worker) HandleStartTask(task *Task) error {
 }
 
 func (w *Worker) HandleChallengedTask(task *Task) error {
-	log.Debug("handler challenged task")
+	log.Info("start working ZKP problem")
 	// start zkp proof
 	err := w.SolveProblem(task)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
+	log.Info("ZKP problem finished")
 	//give it to miner to submit
 	w.scanner.inboundTaskCh <- task
 	return nil

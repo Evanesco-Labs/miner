@@ -15,6 +15,8 @@ var (
 	ErrorMinerWorkerOutOfRange = errors.New("miner's workers reach MaxWorkerCnt, can not add more workers")
 )
 
+var FinishInitProver = make(chan struct{})
+
 type TaskStep int
 
 type GetHeaderFunc func(height Height) (*types.Header, error)
@@ -189,6 +191,7 @@ func NewMiner(config TestConfig) (*Miner, error) {
 		miner.NewWorker(key)
 	}
 	log.Info("miner start")
+	FinishInitProver <- struct{}{}
 	return &miner, nil
 }
 
