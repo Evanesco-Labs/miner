@@ -106,8 +106,8 @@ func (w *Worker) HandleStartTask(task *Task) error {
 	//if w.scanner.LastBlockHeight+task.challengeIndex <= w.scanner.LastBlockHeight {
 	//	return w.HandleTaskAfterChallenge(task)
 	//}
-	header, err := w.scanner.GetHeader(w.scanner.LastCoinbaseHeight + task.challengeIndex)
-	if header != nil && err != nil {
+	header, _ := w.scanner.GetHeader(w.scanner.LastCoinbaseHeight + task.challengeIndex)
+	if header != nil {
 		return w.HandleTaskAfterChallenge(header, task)
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	ethlog "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"gopkg.in/urfave/cli.v1"
 	"gopkg.in/yaml.v2"
@@ -136,6 +137,8 @@ func StartMining(ctx *cli.Context) {
 	} else {
 		coinbase = common.HexToAddress(coinbaseStr)
 	}
+
+	ethlog.Root().SetHandler(ethlog.DiscardHandler())
 
 	headerCh := make(chan *types.Header)
 	//start local test chain
