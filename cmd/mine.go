@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common"
+	ethlog "github.com/ethereum/go-ethereum/log"
 	"gopkg.in/urfave/cli.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -71,6 +72,7 @@ type ConfigYML struct {
 
 func StartMining(ctx *cli.Context) {
 	log.InitLog(log.InfoLog, os.Stdout, log.PATH)
+	ethlog.Root().SetHandler(ethlog.DiscardHandler())
 	runtime.GOMAXPROCS(1)
 	config := miner.DefaultConfig()
 
