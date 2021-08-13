@@ -186,10 +186,11 @@ func (s *TestScanner) Loop() {
 			height := Height(header.Number.Uint64())
 			//index := height - s.LastCoinbaseHeight
 			index := Height(new(big.Int).Mod(header.Number, new(big.Int).SetUint64(uint64(s.CoinbaseInterval))).Uint64())
-			log.Debug("height:", height, " index:", index)
+			log.Info("chain height:", height, " index:", index)
 
 			s.LastBlockHeight = height
 			if s.IfCoinBase(header) {
+				log.Info("start new mining epoch")
 				task := s.NewTask(header)
 				s.taskWait = make(map[Height][]*Task)
 				s.outboundTaskCh <- &task
