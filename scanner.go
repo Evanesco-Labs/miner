@@ -75,6 +75,7 @@ func (s *Scanner) Loop() {
 
 			s.LastBlockHeight = height
 			if s.IfCoinBase(header) {
+				log.Info("start new mining epoch")
 				task := s.NewTask(header)
 				s.taskWait = make(map[Height][]*Task)
 				s.outboundTaskCh <- &task
