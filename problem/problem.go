@@ -157,7 +157,7 @@ func (v *Verifier) VerifyZKP(preimage []byte, mimcHash []byte, proof []byte) boo
 }
 
 //todo: add additional check if the lottery miner pledged
-func (v *Verifier) VerifyLottery(lottery *Lottery, sigBytes []byte, lastCoinbaseHeader types.Header) bool {
+func (v *Verifier) VerifyLottery(lottery *Lottery, sigBytes []byte, lastCoinbaseHeader *types.Header) bool {
 	msg, err := json.Marshal(lottery)
 	if err != nil {
 		return false

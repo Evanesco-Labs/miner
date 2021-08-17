@@ -7,14 +7,18 @@ import (
 	"github.com/Evanesco-Labs/miner/log"
 	"github.com/Evanesco-Labs/miner/problem"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/rpc"
 	"sync"
 	"time"
 )
 
 var (
-	ErrorMinerWorkerOutOfRange = errors.New("miner's workers reach MaxWorkerCnt, can not add more workers")
+	ErrorMinerWorkerOutOfRange    = errors.New("miner's workers reach MaxWorkerCnt, can not add more workers")
+	ErrorLocalMinerWithoutBackend = errors.New("new local miner with nil backend")
+	ErrorBlockHeaderSubscribe     = errors.New("block header subscribe error")
 )
 
 type TaskStep int
@@ -128,6 +132,57 @@ type Miner struct {
 	exitCh           chan struct{}
 }
 
+func NewLocalMiner(config Config, backend *eth.Ethereum) (*Miner, error) {
+	zkpProver, err := problem.NewProblemProver(config.PkPath)
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+	log.Info("Init ZKP Problem worker success!")
+	miner := Miner{
+		mu:               sync.RWMutex{},
+		config:           config,
+		zkpProver:        zkpProver,
+		MaxWorkerCnt:     config.MaxWorkerCnt,
+		MaxTaskCnt:       config.MaxTaskCnt,
+		CoinbaseAddr:     config.CoinbaseAddr,
+		workers:          make(map[common.Address]*Worker),
+		coinbaseInterval: Height(config.CoinbaseInterval),
+		submitAdvance:    Height(config.SubmitAdvance),
+		exitCh:           make(chan struct{}),
+		wsUrl:            config.WsUrl,
+	}
+
+	if backend == nil {
+		return nil, ErrorLocalMinerWithoutBackend
+	}
+
+	explorer := LocalExplorer{
+		Ethereum: backend,
+		headerCh: make(chan *types.Header),
+	}
+	blockEventCh := make(chan core.ChainHeadEvent)
+	sub := backend.BlockChain().SubscribeChainHeadEvent(blockEventCh)
+	go func() {
+		select {
+		case blockEvent := <-blockEventCh:
+			explorer.headerCh <- blockEvent.Block.Header()
+		case err := <-sub.Err():
+			log.Error(ErrorBlockHeaderSubscribe, err)
+			miner.Close()
+		}
+	}()
+	miner.NewScanner(&explorer)
+
+	go miner.Loop()
+	//add new workers
+	for _, key := range config.MinerList {
+		miner.NewWorker(key)
+	}
+	log.Info("miner start")
+	return &miner, nil
+}
+
 func NewMiner(config Config) (*Miner, error) {
 	zkpProver, err := problem.NewProblemProver(config.PkPath)
 	if err != nil {
@@ -149,10 +204,31 @@ func NewMiner(config Config) (*Miner, error) {
 		wsUrl:            config.WsUrl,
 	}
 
-	err = miner.NewScanner()
+	client, err := rpc.Dial(config.WsUrl)
 	if err != nil {
 		return nil, err
 	}
+
+	headerCh := make(chan *types.Header)
+	sub, err := client.EthSubscribe(context.Background(), headerCh, "newHeads")
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		err := <-sub.Err()
+		log.Error(ErrorBlockHeaderSubscribe, err)
+		miner.Close()
+	}()
+
+	explorer := RpcExplorer{
+		Client:     client,
+		Sub:        sub,
+		headerCh:   headerCh,
+		rpcTimeOut: config.RpcTimeout,
+		wsUrl:      config.WsUrl,
+	}
+	miner.NewScanner(&explorer)
 
 	go miner.Loop()
 	//add new workers
@@ -250,18 +326,7 @@ func (m *Miner) Loop() {
 	}
 }
 
-func (m *Miner) NewScanner() error {
-	client, err := rpc.Dial(m.wsUrl)
-	if err != nil {
-		return err
-	}
-
-	headerCh := make(chan *types.Header)
-	sub, err := client.EthSubscribe(context.Background(), headerCh, "newHeads")
-
-	if err != nil {
-		return err
-	}
+func (m *Miner) NewScanner(explorer Explorer) {
 
 	m.scanner = &Scanner{
 		mu:                 sync.RWMutex{},
@@ -271,16 +336,11 @@ func (m *Miner) NewScanner() error {
 		CoinbaseInterval:   m.coinbaseInterval,
 		LastCoinbaseHeight: 0,
 		taskWait:           make(map[Height][]*Task),
-		headerCh:           headerCh,
 		inboundTaskCh:      make(chan *Task),
 		outboundTaskCh:     make(chan *Task),
+		explorer:           explorer,
 		exitCh:             make(chan struct{}),
-		wsUrl:              m.wsUrl,
-		evaClient:          client,
-		sub:                sub,
-		rpcTimeout:         m.config.RpcTimeout,
 	}
 
 	go m.scanner.Loop()
-	return nil
 }

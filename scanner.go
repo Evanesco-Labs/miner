@@ -3,12 +3,14 @@ package miner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/Evanesco-Labs/miner/log"
 	"github.com/Evanesco-Labs/miner/problem"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 	"sync"
@@ -23,6 +25,48 @@ var (
 
 type Height uint64
 
+type Explorer interface {
+	GetHeaderChan() chan *types.Header
+	GetHeaderByNum(num uint64) *types.Header
+}
+
+type RpcExplorer struct {
+	Client     *rpc.Client
+	Sub        ethereum.Subscription
+	headerCh   chan *types.Header
+	rpcTimeOut time.Duration
+	wsUrl      string
+}
+
+func (r *RpcExplorer) GetHeaderChan() chan *types.Header {
+	return r.headerCh
+}
+
+func (r *RpcExplorer) GetHeaderByNum(num uint64) *types.Header {
+	ctx, cancel := context.WithTimeout(context.Background(), r.rpcTimeOut)
+	defer cancel()
+	var head *types.Header
+	err := r.Client.CallContext(ctx, &head, "eth_getBlockByNumber", toBlockNumArg(new(big.Int).SetUint64(num)), false)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	return head
+}
+
+type LocalExplorer struct {
+	*eth.Ethereum
+	headerCh chan *types.Header
+}
+
+func (l *LocalExplorer) GetHeaderChan() chan *types.Header {
+	return l.headerCh
+}
+
+func (l *LocalExplorer) GetHeaderByNum(num uint64) *types.Header {
+	return l.BlockChain().GetHeaderByNumber(num)
+}
+
 type Scanner struct {
 	mu                 sync.RWMutex
 	CoinbaseAddr       common.Address
@@ -30,14 +74,10 @@ type Scanner struct {
 	LastBlockHeight    Height
 	CoinbaseInterval   Height
 	LastCoinbaseHeight Height
-	evaClient          *rpc.Client
-	sub                ethereum.Subscription
+	explorer           Explorer
 	taskWait           map[Height][]*Task //single concurrent
-	headerCh           chan *types.Header
-	inboundTaskCh      chan *Task //channel to receive tasks from worker
-	outboundTaskCh     chan *Task //channel to send challenged task to miner
-	rpcTimeout         time.Duration
-	wsUrl              string
+	inboundTaskCh      chan *Task         //channel to receive tasks from worker
+	outboundTaskCh     chan *Task         //channel to send challenged task to miner
 	exitCh             chan struct{}
 }
 
@@ -58,15 +98,12 @@ func (s *Scanner) close() {
 }
 
 func (s *Scanner) Loop() {
+	headerCh := s.explorer.GetHeaderChan()
 	for {
 		select {
 		case <-s.exitCh:
 			return
-		case err := <-s.sub.Err():
-			//todo: improve robustness
-			panic(err)
-			return
-		case header := <-s.headerCh:
+		case header := <-headerCh:
 			log.Debug("best score:", s.BestScore)
 			height := Height(header.Number.Uint64())
 			//index := height - s.LastCoinbaseHeight
@@ -135,15 +172,11 @@ func (s *Scanner) IfCoinBase(h *types.Header) bool {
 
 //todo: improve robustness, add some retries
 func (s *Scanner) GetHeader(height Height) (*types.Header, error) {
-	num := new(big.Int).SetUint64(uint64(height))
-	ctx, cancel := context.WithTimeout(context.Background(), s.rpcTimeout)
-	defer cancel()
-	var head *types.Header
-	err := s.evaClient.CallContext(ctx, &head, "eth_getBlockByNumber", toBlockNumArg(num), false)
-	if err == nil && head == nil {
-		err = ethereum.NotFound
+	header := s.explorer.GetHeaderByNum(uint64(height))
+	if header == nil {
+		return header, fmt.Errorf("get header failed, height: %v", height)
 	}
-	return head, err
+	return header, nil
 }
 
 func (s *Scanner) Submit(task *Task) error {
