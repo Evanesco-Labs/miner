@@ -71,7 +71,7 @@ func ZKPProve(r1cs frontend.CompiledConstraintSystem, pk groth16.ProvingKey, pre
 	c.Hash.Assign(mimchash)
 	proof, err := groth16.Prove(r1cs, pk, &c)
 	if err != nil {
-		log.Error("groth16 error:", err.Error())
+		log.Debug("groth16 error:", err.Error())
 		return nil, nil
 	}
 	buf := bytes.Buffer{}
@@ -107,14 +107,14 @@ func (p *Prover) Prove(preimage []byte) ([]byte, []byte) {
 }
 
 func NewProblemProver(pkPath string) (*Prover, error) {
-	log.Info("Compiling ZKP circuit")
+	log.Debug("Compiling ZKP circuit")
 	r1cs := CompileCircuit()
 	pkFile, err := os.OpenFile(pkPath, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, ErrorInvalidPkPath
 	}
 	defer pkFile.Close()
-	log.Info("Loading ZKP prove key. This takes a few minutes")
+	log.Debug("Loading ZKP prove key. This takes a few minutes")
 	pk := groth16.NewProvingKey(ecc.BN254)
 	_, err = pk.ReadFrom(pkFile)
 	if err != nil {
@@ -160,47 +160,55 @@ func (v *Verifier) VerifyZKP(preimage []byte, mimcHash []byte, proof []byte) boo
 func (v *Verifier) VerifyLottery(lottery *types.Lottery, sigBytes []byte, lastCoinbaseHeader *types.Header) bool {
 	msg, err := json.Marshal(lottery)
 	if err != nil {
+		log.Debug("marshal err",err)
 		return false
 	}
 
 	msgHash :=  crypto.Keccak256(msg)
 	ecdsaPK, err := crypto.SigToPub(msgHash, sigBytes)
 	if err != nil {
+		log.Debug("sig to pub err",err)
 		return false
 	}
 	pk, err := keypair.NewPublicKey(ecdsaPK)
 	if err != nil {
+		log.Debug("new pub key err",err)
 		return false
 	}
 
 	if crypto.PubkeyToAddress(*ecdsaPK) != lottery.MinerAddr {
+		log.Debug("miner address not equal")
 		return false
 	}
 
 	lastCoinbaseHash := lastCoinbaseHeader.Hash()
 	index, err := vrf.ProofToHash(pk, lastCoinbaseHash[:], lottery.VrfProof)
 	if err != nil {
+		log.Debug("vrf proof err")
 		return false
 	}
 
 	if index != lottery.Index {
+		log.Debug("index not the same")
 		return false
 	}
 
 	challengeHeight := lastCoinbaseHeader.Number.Uint64() + GetChallengeIndex(index, uint64(v.coinbaseInterval)-uint64(v.submitAdvance))
 	challengeHeader, err := v.getHeaderByNum(challengeHeight)
 	if err != nil || challengeHeader == nil {
+		log.Debug("get header err",challengeHeight)
 		return false
 	}
 
 	if challengeHeader.Hash() != lottery.ChallengeHeaderHash {
+		log.Debug("head not equal")
 		return false
 	}
 
 	addrBytes := lottery.MinerAddr.Bytes()
 	preimage := append(addrBytes, lottery.ChallengeHeaderHash[:]...)
 	preimage = crypto.Keccak256(preimage)
-	return v.VerifyZKP(preimage, lottery.MimcHash, lottery.VrfProof)
+	return v.VerifyZKP(preimage, lottery.MimcHash, lottery.ZkpProof)
 }
 
 func GetChallengeIndex(index [32]byte, interval uint64) uint64 {
