@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Evanesco-Labs/miner/log"
-	"github.com/Evanesco-Labs/miner/problem"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 	"sync"
@@ -55,7 +54,7 @@ func (r *RpcExplorer) GetHeaderByNum(num uint64) *types.Header {
 }
 
 type LocalExplorer struct {
-	*eth.Ethereum
+	Backend
 	headerCh chan *types.Header
 }
 
@@ -87,7 +86,7 @@ func (s *Scanner) NewTask(h *types.Header) Task {
 		CoinbaseAddr:     s.CoinbaseAddr,
 		lastCoinBaseHash: h.Hash(),
 		challengeIndex:   Height(uint64(0)),
-		lottery: &problem.Lottery{
+		lottery: &types.Lottery{
 			CoinbaseAddr: s.CoinbaseAddr,
 		},
 	}
@@ -186,6 +185,17 @@ func (s *Scanner) Submit(task *Task) error {
 		"\ncoinbase address:", task.CoinbaseAddr,
 		"\nscore:", task.lottery.Score().String(),
 	)
+
+	if localExp, ok := s.explorer.(*LocalExplorer); ok {
+		err := localExp.EventMux().Post(core.NewSolvedLotteryEvent{Lot: types.LotterySubmit{
+			Lottery:   *task.lottery,
+			Signature: task.signature,
+		},
+		})
+		if err != nil {
+			log.Error("submit with local explorer", err)
+		}
+	}
 
 	//todo: rpc call to submit work
 	//ctx, cancel := context.WithTimeout(context.Background(), s.rpcTimeout)

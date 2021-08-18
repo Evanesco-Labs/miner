@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/rpc"
 	"sync"
 	"time"
@@ -37,6 +37,11 @@ const (
 	RPCTIMEOUT       = time.Minute
 )
 
+type Backend interface {
+	BlockChain() *core.BlockChain
+	EventMux() *event.TypeMux
+}
+
 type Task struct {
 	CoinbaseAddr     common.Address
 	minerAddr        common.Address
@@ -44,7 +49,7 @@ type Task struct {
 	lastCoinBaseHash [32]byte
 	challengeHeader  *types.Header
 	challengeIndex   Height
-	lottery          *problem.Lottery
+	lottery          *types.Lottery
 	signature        [65]byte
 }
 
@@ -70,7 +75,7 @@ func SetTaskMinerAddr(template *Task, minerAddr common.Address) Task {
 		Step:             TASKSTART,
 		lastCoinBaseHash: template.lastCoinBaseHash,
 		challengeIndex:   Height(uint64(0)),
-		lottery: &problem.Lottery{
+		lottery: &types.Lottery{
 			MinerAddr:    minerAddr,
 			CoinbaseAddr: template.CoinbaseAddr,
 		},
@@ -132,7 +137,7 @@ type Miner struct {
 	exitCh           chan struct{}
 }
 
-func NewLocalMiner(config Config, backend *eth.Ethereum) (*Miner, error) {
+func NewLocalMiner(config Config, backend Backend) (*Miner, error) {
 	zkpProver, err := problem.NewProblemProver(config.PkPath)
 	if err != nil {
 		log.Error(err.Error())
@@ -158,7 +163,7 @@ func NewLocalMiner(config Config, backend *eth.Ethereum) (*Miner, error) {
 	}
 
 	explorer := LocalExplorer{
-		Ethereum: backend,
+		Backend:  backend,
 		headerCh: make(chan *types.Header),
 	}
 	blockEventCh := make(chan core.ChainHeadEvent)

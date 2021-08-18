@@ -5,7 +5,6 @@ import (
 	miner "github.com/Evanesco-Labs/miner"
 	"github.com/Evanesco-Labs/miner/keypair"
 	"github.com/Evanesco-Labs/miner/log"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common"
 	ethlog "github.com/ethereum/go-ethereum/log"
@@ -103,23 +102,11 @@ func StartMining(ctx *cli.Context) {
 		}
 	}
 
-	// Read key from file.
-	keyJson, err := ioutil.ReadFile(minerKeyPath)
+	minerKey, err := GetKeyFromFile(ctx, minerKeyPath)
 	if err != nil {
-		utils.Fatalf("Failed to read the keyfile at '%s': %v", minerKeyPath, err)
+		utils.Fatalf("load miner key from file err %v", err)
 	}
 
-	// Decrypt key with passphrase.
-	passphrase := getPassphrase(ctx, false)
-	rawKey, err := keystore.DecryptKey(keyJson, passphrase)
-	if err != nil {
-		utils.Fatalf("Error decrypting key: %v", err)
-	}
-
-	minerKey, err := keypair.NewKey(rawKey.PrivateKey)
-	if err != nil {
-		utils.Fatalf("Error loading miner key : %v", err)
-	}
 	minerKeyList := []keypair.Key{minerKey}
 
 	var coinbase common.Address
