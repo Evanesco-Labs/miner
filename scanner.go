@@ -93,6 +93,10 @@ func (s *Scanner) NewTask(h *types.Header) Task {
 }
 
 func (s *Scanner) close() {
+	defer func() {
+		if recover() != nil {
+		}
+	}()
 	close(s.exitCh)
 }
 
@@ -195,12 +199,23 @@ func (s *Scanner) Submit(task *Task) error {
 		if err != nil {
 			log.Error("submit with local explorer", err)
 		}
+		return nil
+	}
+	if rpcExp, ok := s.explorer.(*RpcExplorer); ok {
+		ctx, cancel := context.WithTimeout(context.Background(), RPCTIMEOUT)
+		defer cancel()
+		submit := types.LotterySubmit{
+			Lottery:   *task.lottery,
+			Signature: task.signature,
+		}
+
+		err := rpcExp.Client.CallContext(ctx, nil, "eth_lotterySubmit", submit)
+		if err != nil {
+			log.Error("rpc submit lottery error:", err)
+		}
+		return err
 	}
 
-	//todo: rpc call to submit work
-	//ctx, cancel := context.WithTimeout(context.Background(), s.rpcTimeout)
-	//defer cancel()
-	//s.evaClient.CallContext(ctx)
 	return nil
 }
 

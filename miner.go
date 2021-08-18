@@ -169,12 +169,14 @@ func NewLocalMiner(config Config, backend Backend) (*Miner, error) {
 	blockEventCh := make(chan core.ChainHeadEvent)
 	sub := backend.BlockChain().SubscribeChainHeadEvent(blockEventCh)
 	go func() {
-		select {
-		case blockEvent := <-blockEventCh:
-			explorer.headerCh <- blockEvent.Block.Header()
-		case err := <-sub.Err():
-			log.Error(ErrorBlockHeaderSubscribe, err)
-			miner.Close()
+		for {
+			select {
+			case blockEvent := <-blockEventCh:
+				explorer.headerCh <- blockEvent.Block.Header()
+			case <-sub.Err():
+				//log.Error(ErrorBlockHeaderSubscribe, err)
+				miner.Close()
+			}
 		}
 	}()
 	miner.NewScanner(&explorer)
@@ -245,6 +247,10 @@ func NewMiner(config Config) (*Miner, error) {
 }
 
 func (m *Miner) Close() {
+	defer func() {
+		if recover() != nil {
+		}
+	}()
 	//close workers
 	for _, worker := range m.workers {
 		worker.close()

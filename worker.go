@@ -84,6 +84,10 @@ func (w *Worker) stop() {
 }
 
 func (w *Worker) close() {
+	defer func() {
+		if recover() != nil {
+		}
+	}()
 	atomic.StoreInt32(&w.running, 0)
 	close(w.exitCh)
 }
