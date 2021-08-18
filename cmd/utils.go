@@ -19,6 +19,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Evanesco-Labs/miner/keypair"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"io/ioutil"
 	"strings"
 
@@ -66,4 +68,25 @@ func mustPrintJSON(jsonObject interface{}) {
 		utils.Fatalf("Failed to marshal JSON object: %v", err)
 	}
 	fmt.Println(string(str))
+}
+
+func GetKeyFromFile(ctx *cli.Context, keypath string) (keypair.Key, error) {
+	// Read key from file.
+	keyJson, err := ioutil.ReadFile(keypath)
+	if err != nil {
+		return keypair.Key{}, fmt.Errorf("failed to read the keyfile at '%s': %v", keypath, err)
+	}
+
+	// Decrypt key with passphrase.
+	passphrase := getPassphrase(ctx, false)
+	rawKey, err := keystore.DecryptKey(keyJson, passphrase)
+	if err != nil {
+		return keypair.Key{}, fmt.Errorf("error decrypting key: %v", err)
+	}
+
+	minerKey, err := keypair.NewKey(rawKey.PrivateKey)
+	if err != nil {
+		return keypair.Key{}, fmt.Errorf("error loading miner key : %v", err)
+	}
+	return minerKey, nil
 }
