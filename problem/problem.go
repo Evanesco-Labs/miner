@@ -157,22 +157,32 @@ func (v *Verifier) VerifyZKP(preimage []byte, mimcHash []byte, proof []byte) boo
 }
 
 //todo: add additional check if the lottery miner pledged
-func (v *Verifier) VerifyLottery(lottery *types.Lottery, sigBytes []byte, lastCoinbaseHeader *types.Header) bool {
+func (v *Verifier) VerifyLottery(lottery *types.Lottery, sigBytes []byte, lastCoinbaseHeader *types.Header) (res bool) {
+
+	defer func() {
+		if r := recover();r!= nil{
+			res = false
+		}
+	}()
+
+	if lottery == nil || sigBytes == nil || lastCoinbaseHeader == nil {
+		return false
+	}
 	msg, err := json.Marshal(lottery)
 	if err != nil {
-		log.Debug("marshal err",err)
+		log.Debug("marshal err", err)
 		return false
 	}
 
-	msgHash :=  crypto.Keccak256(msg)
+	msgHash := crypto.Keccak256(msg)
 	ecdsaPK, err := crypto.SigToPub(msgHash, sigBytes)
 	if err != nil {
-		log.Debug("sig to pub err",err)
+		log.Debug("sig to pub err", err)
 		return false
 	}
 	pk, err := keypair.NewPublicKey(ecdsaPK)
 	if err != nil {
-		log.Debug("new pub key err",err)
+		log.Debug("new pub key err", err)
 		return false
 	}
 
@@ -196,7 +206,7 @@ func (v *Verifier) VerifyLottery(lottery *types.Lottery, sigBytes []byte, lastCo
 	challengeHeight := lastCoinbaseHeader.Number.Uint64() + GetChallengeIndex(index, uint64(v.coinbaseInterval)-uint64(v.submitAdvance))
 	challengeHeader, err := v.getHeaderByNum(challengeHeight)
 	if err != nil || challengeHeader == nil {
-		log.Debug("get header err",challengeHeight)
+		log.Debug("get header err", challengeHeight)
 		return false
 	}
 
