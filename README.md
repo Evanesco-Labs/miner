@@ -75,13 +75,14 @@ Please download from IPFS, IPFS CID:
 
 ### Startup
 
-You can start mining with subcommand `mine`. There are We provide some parameters for mining configuration：
+You can start mining with subcommand `mine`. There are some parameters for mining configuration：
 
 - **--url**:
   WebSocket URL of a running Evanesco node, for example `ws://127.0.0.1:8549`.
 - **--pk**: Path of the ZKP prove key (default: "./provekey.txt").
 - **--key**: Path of the key file as miner address (default: "./keyfile.json").
 - **--coinbase**: Coinbase Address where mining reward will be sent to. It's the same as miner address by default.
+- **--passwordfile**: The file that contains the password for the keyfile.  
 - **--config**: Config file path (default: "./config.yml").
 
 The following command can show you all the parameters and their uses:
@@ -108,20 +109,23 @@ Enter keyfile password when the following prints:
 Password: 
 ```
 
+If you don't want to enter password everytime, it is possible
+to pass the password by using the --passwordfile flag pointing to a file that
+contains the password. 
+
 Then miner starts to initialize ZKP prover, includes compiling ZKP circuit and loading ZKP prove key. You can see the
 followings in log:
 
 ```shell
-2021/08/13 15:30:37.275726 [INFO ] GID 1, [problem] Compiling ZKP circuit
-2021/08/13 15:30:41.724334 [INFO ] GID 1, [problem] Loading ZKP prove key, this takes a few minutes.
+INFO [08-24|15:56:41.152] Compiling ZKP circuit 
+INFO [08-24|15:56:46.234] Loading ZKP prove key. This takes a few minutes
 ```
 
 This may take 5 to 15 minutes, please wait. When the initialization success, the following prints in log:
 
 ```shell
-2021/08/13 15:47:05.869020 [INFO ] GID 1, [miner] Init ZKP Problem Worker success!
-2021/08/13 15:47:05.869168 [DEBUG] GID 1, [miner] github.com/Evanesco-Labs/miner.(*Miner).NewWorker miner.go:234 worker start
-2021/08/13 15:47:05.869192 [INFO ] GID 1, [miner] miner start
+INFO [08-24|16:02:46.363] Init ZKP Problem worker success! 
+INFO [08-24|16:02:46.380] miner start
 ```
 
 After that, the log will continue to print the block height, block index.
@@ -131,29 +135,28 @@ Miners follow new blocks and work according to the following process：
 1. Wait for new mining epoch. Log prints:
 
 ```shell
-2021/08/13 16:20:20.987955 [INFO ] GID 106, [miner] start new mining epoch
+INFO [08-24|15:24:51.004] start new mining epoch
 ```
 
 2. Doing VRF and get the Challenged Height of this mining epoch. Log prints:
 
 ```shell
-2021/08/13 16:20:20.988758 [INFO ] GID 111, [miner] vrf finished challenge height: 56 index: 56
+INFO [08-24|15:24:51.008] vrf finished                             challenge height=3015 index=15
 ```
 
 3. Wait till the blockchain reach Challenge Height, and start solving ZKP problem. Log prints:
 
 ```shell
-2021/08/13 16:25:50.428437 [INFO ] GID 167, [miner] start working ZKP problem
+INFO [08-24|15:26:21.102] start working ZKP problem
 ```
 
 4. ZKP problem solved, miner submit Lottery. Log prints:
 
 ```shell
-2021/08/13 16:26:52.522183 [INFO ] GID 167, [miner] ZKP problem finished
-2021/08/13 16:26:52.522315 [INFO ] GID 106, [miner] submit new work 
-miner: Exb5Cf748be8414293B83fC9eDCfc47cF8Ece05Eec 
-score: 99012458875274928854094129045709882384886482989475090027812147624624819215500 
-coinbase: Exb5Cf748be8414293B83fC9eDCfc47cF8Ece05Eec
+INFO [08-24|15:27:25.153] submit work                              
+miner address=Ex3d9C3C64b1083b8DA73E8E247B8484309EE429ff 
+coinbase address=Ex3d9C3C64b1083b8DA73E8E247B8484309EE429ff 
+score=114387952695245842542743197336030803861427527497199672381530456658266076847982
 ```
 
 

@@ -19,8 +19,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Evanesco-Labs/miner/keypair"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/zkpminer/keypair"
 	"io/ioutil"
 	"strings"
 
