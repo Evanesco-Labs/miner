@@ -4,12 +4,12 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/Evanesco-Labs/miner/problem"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/zkpminer/problem"
 	"github.com/stretchr/testify/assert"
 	"runtime"
 	"testing"
@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	PkPath   = "../provekey.txt"
-	VkPath   = "../verifykey.txt"
+	PkPath   = "../provekeytest.txt"
+	VkPath   = "../verifykeytest.txt"
 )
 
 func GenerateTestChain(cnt int) (*core.HeaderChain, error) {

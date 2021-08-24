@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	miner "github.com/Evanesco-Labs/miner"
-	"github.com/Evanesco-Labs/miner/keypair"
-	"github.com/Evanesco-Labs/miner/log"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common"
-	ethlog "github.com/ethereum/go-ethereum/log"
+	miner "github.com/ethereum/go-ethereum/zkpminer"
+	"github.com/ethereum/go-ethereum/zkpminer/keypair"
 	"gopkg.in/urfave/cli.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -58,6 +56,7 @@ If you want to test mining without Evanesco network, set the --test flag.
 		pkFlag,
 		minerKeyFlag,
 		coinbaseFlag,
+		passphraseFlag,
 	},
 	Action: StartMining,
 }
@@ -70,8 +69,6 @@ type ConfigYML struct {
 }
 
 func StartMining(ctx *cli.Context) {
-	log.InitLog(log.InfoLog, os.Stdout, log.PATH)
-	ethlog.Root().SetHandler(ethlog.DiscardHandler())
 	runtime.GOMAXPROCS(1)
 	config := miner.DefaultConfig()
 
