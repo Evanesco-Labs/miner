@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	PkPath   = "../provekeytest.txt"
-	VkPath   = "../verifykeytest.txt"
+	PkPath = "../provekeytest.txt"
+	VkPath = "../verifykeytest.txt"
 )
 
 func GenerateTestChain(cnt int) (*core.HeaderChain, error) {
