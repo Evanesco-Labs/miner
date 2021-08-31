@@ -254,7 +254,7 @@ Config file for example:
 ```yaml
 zkp_prove_key: ./provekey.txt
 miner_key: ./keyfile.json
-coinbase_address: ExaA460D005DE1d5e572a78f90E68d774cEB51c7fc
+coinbase_address: 0xaA460D005DE1d5e572a78f90E68d774cEB51c7fc
 ```
 
 ## Local Test
