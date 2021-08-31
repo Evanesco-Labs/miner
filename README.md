@@ -42,9 +42,9 @@ This generates a new key file `keyfile.json` in the current directory.
 Before starting to mine, you also need to download a ZKP prove key. This is a unique ZKP prove key, and miner have to
 load this ZKP prove key to start GPow working.
 
-Please download from IPFS, IPFS CID:
+[IPFS Download Link](https://ipfs.io/ipfs/QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx)
 
-Copy the ZKP prove key file `provekey.txt` to the same directory of executable file `miner`.
+Copy the ZKP prove key file `QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx` to the same directory of executable file `miner`.
 
 ### Start Mining Test
 
