@@ -1,4 +1,3 @@
-url: ""
-zkp_prove_key: ./provekey.txt
+zkp_prove_key: "QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx"
 miner_key: ./keyfile.json
 coinbase_address: ""
