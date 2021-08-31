@@ -10,12 +10,23 @@ A miners determine his Challenge Height based on VRF at the beginning of each Mi
 time" when miner need to do some hard work. When the block height reaches the Challenge Height, the miner starts to work
 on a ZKP problem. This will take about one minute.
 
-After the problem is solved, miner submit the results to an Evanesco node. We call this result a Lottery. Each Lottery
-can be scored. In the final block of this Mining Epoch, the Coinbase Address of the Lottery with best score will get the
-reward.
+After the problem is solved, miner submit the results to an Evanesco node. A problem result
+can be scored. In the final block of this Mining Epoch, result with best score wins, and it's Coinbase Address gets rewards.
+
+### Miner Address and Coinbase Address
+
+There are two different addresses for mining, miner address and coinbase address.
+**Miner Address** is used to determine the challenge block of each round and sign the submitted work.
+
+**Coinbase Address** is used to receive mining rewards. If **Coinbase Address** is not set with command line parameters
+or in config file, it will be the same as **Miner Address** by default.
+
+**Mining rewards will be sent to Coinbase Address, NOT Miner address!**
 
 ## Quick Start Avis TestNet Miner
-Follow this quick start guide to start miner on AVIS TestNet. Please note that when the AVIS testnet is officially launched on September 7, it will be lauched from the Genesis Block, so all previous mining rewards and transactions will be cleared.
+Follow this quick start guide to start miner on AVIS TestNet.
+
+Please note that when the AVIS testnet is officially launched on September 7, it will be launched from the Genesis Block, so all previous mining rewards and transactions will be cleared.
 ### 1. Download Miner
 Download in github release.
 
@@ -43,11 +54,13 @@ chmod 777 ./miner
 
 ### 2. Download ZKP ProveKey
 
-Before starting to mine, you also need to download a ZKP ProveKey file `provekey.txt`.
+Before starting to mine, you also need to download a ZKP ProveKey file.
 
-Download from IPFS [Download Link](https://ipfs.io/ipfs/QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx) and copy `provekey.txt` to the unzipped miner directory.
+Download it from IPFS [Download Link](https://ipfs.io/ipfs/QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx). Click this link will download a file named `QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx`.
 
-### 3. Generate Account
+Rename this file to `provekey.txt` and copy `provekey.txt` to the unzipped miner directory.
+
+### 3. Generate Miner Account
 The following  command will generate a new key file named `keyfile.json`to derive you Miner Account. You can set a password for your keyfile and remember this password.
 
 #### MacOS
@@ -70,9 +83,9 @@ Go to the unzipped directory `miner-windows` in command line  and use this comma
 ./miner.exe generate
 ```
 
-### 4. Start Miner
+### 4. Start Mining
 
-The following command will startup miner with Miner Address derived from `keyfile.json` and set the Coinbase Address the same as Miner Addresss by default.
+The following command will startup miner with Miner Address derived from `keyfile.json` and set the Coinbase Address the same as Miner Address by default.
 
 #### MacOS
 Go to the unzipped directory `miner-darwin` in terminal and use this command:
@@ -143,12 +156,12 @@ INFO [08-24|15:24:51.008] vrf finished                             challenge hei
 INFO [08-24|15:26:21.102] start working ZKP problem
 ```
 
-4. ZKP problem solved, miner submit Lottery. Log prints:
+4. ZKP problem solved, miner submit result. Log prints:
 
 ```shell
 INFO [08-24|15:27:25.153] submit work                              
-miner address=Ex3d9C3C64b1083b8DA73E8E247B8484309EE429ff 
-coinbase address=Ex3d9C3C64b1083b8DA73E8E247B8484309EE429ff 
+miner address=<Your miner address>
+coinbase address=<Your Coinbase address> 
 score=114387952695245842542743197336030803861427527497199672381530456658266076847982
 ```
 
@@ -197,20 +210,11 @@ Check Address and Public key of key file `keyfile.json` with this command:
 
 ## Miner Specifics
 
-To start mining, you need a key file as the miner account.
-
-Please note that there are two different addresses for mining, miner address and coinbase address.
-**Miner Address** is used to determine the challenge block of each round and sign the submitted work.
-**Coinbase Address** is used to receive mining rewards. If **Coinbase Address** is not set with command line parameters
-or in config file, it will be the same as **Miner Address** by default.
-
-**Mining rewards will be sent to Coinbase Address, NOT Miner address!**
-
-### Download ZKP Prove Key
+### ZKP Prove Key
 ZKP Prove Key: [Download Link](https://ipfs.io/ipfs/QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx)
 
-Before starting to mine, you also need to download a ZKP prove key. This is a unique ZKP prove key, and miner have to
-load this ZKP prove key to start GPow working.
+Before starting to mine, you also need to download a ZKP prove key. This is a unique ZKP prove key containing ZKP CRS parameters. Miner have to
+load this ZKP prove key to start GPow work.
 
 ### Parameters and Configs
 
@@ -254,9 +258,9 @@ Config file for example:
 ```yaml
 zkp_prove_key: ./provekey.txt
 miner_key: ./keyfile.json
-coinbase_address: 0xaA460D005DE1d5e572a78f90E68d774cEB51c7fc
+coinbase_address: "Fill in an address to receive mining reward"
 ```
 
 ## Local Test
 
-Check git branch `localtest` to locally test your mining device, no need to connect to real Evacesco node.
+Check git branch `localtest` to locally test your mining device, no need to connect to real Evanesco node.
