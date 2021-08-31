@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
 	miner "github.com/ethereum/go-ethereum/zkpminer"
 	"github.com/ethereum/go-ethereum/zkpminer/keypair"
 	"gopkg.in/urfave/cli.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
-	"time"
 )
 
 var AvisWsURL = []string{"ws://3.128.151.194:7777", "ws://18.118.180.198:7777", "ws://18.191.121.77:7777"}
+
+var AvsiWsURLTest = []string{"ws://127.0.0.1:8541", "ws://127.0.0.1:8542"}
 
 var (
 	configFlag = cli.StringFlag{
@@ -33,7 +32,7 @@ var (
 	pkFlag = cli.StringFlag{
 		Name:  "pk",
 		Usage: "provekey of ZKP problem path",
-		Value: "./provekey.txt",
+		Value: "./QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx",
 	}
 	minerKeyFlag = cli.StringFlag{
 		Name:  "key",
@@ -76,8 +75,13 @@ type ConfigYML struct {
 func StartMining(ctx *cli.Context) {
 	runtime.GOMAXPROCS(1)
 	config := miner.DefaultConfig()
+	config.WsUrl = AvisWsURL
 
-	url := ctx.String("url")
+	urlList := make([]string, 0)
+	if ctx.IsSet(urlFlag.Name) {
+		urlList = append(urlList, ctx.String(urlFlag.Name))
+	}
+
 	minerKeyPath := ctx.String("key")
 	coinbaseStr := ctx.String("coinbase")
 	pkPath := ctx.String("pk")
@@ -89,9 +93,8 @@ func StartMining(ctx *cli.Context) {
 	if err == nil {
 		err = yaml.Unmarshal(b, &configYml)
 		if err == nil {
-			if (!ctx.IsSet("url")) && len(configYml.Url) != 0 {
-				r := rand.New(rand.NewSource(time.Now().UnixNano()))
-				url = configYml.Url[r.Intn(len(configYml.Url))]
+			if len(configYml.Url) != 0 {
+				urlList = append(urlList, configYml.Url...)
 			}
 			if (!ctx.IsSet("key")) && configYml.MinerKey != "" {
 				minerKeyPath = configYml.MinerKey
@@ -121,12 +124,8 @@ func StartMining(ctx *cli.Context) {
 		coinbase = common.HexToAddress(coinbaseStr)
 	}
 
-	config.Customize(minerKeyList, coinbase, url, pkPath)
+	config.Customize(minerKeyList, coinbase, urlList, pkPath)
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	url = AvisWsURL[r.Intn(len(AvisWsURL))]
-	config.WsUrl = url
-	log.Info("Avis node websocket url", "url", url)
 	_, err = miner.NewMiner(config)
 	if err != nil {
 		utils.Fatalf("Starting miner error: %v", err)

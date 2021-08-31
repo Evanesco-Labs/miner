@@ -56,9 +56,9 @@ chmod 777 ./miner
 
 Before starting to mine, you also need to download a ZKP ProveKey file.
 
-Download it from IPFS [Download Link](https://ipfs.io/ipfs/QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx). Click this link will download a file named `QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx`.
+Click this IPFS [Download Link](https://ipfs.io/ipfs/QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx) will download a file named `QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx`.
 
-Rename this file to `provekey.txt` and copy `provekey.txt` to the unzipped miner directory.
+Copy `QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx` to the unzipped miner directory.
 
 ### 3. Generate Miner Account
 The following  command will generate a new key file named `keyfile.json`to derive you Miner Account. You can set a password for your keyfile and remember this password.
@@ -220,7 +220,7 @@ load this ZKP prove key to start GPow work.
 
 You can start mining with subcommand `mine`. There are some parameters for mining configuration：
 
-- **--pk**: Path of the ZKP prove key (default: "./provekey.txt").
+- **--pk**: Path of the ZKP prove key (default: "./QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx").
 - **--key**: Path of the key file as miner address (default: "./keyfile.json").
 - **--coinbase**: Coinbase Address where mining reward will be sent to. It's the same as miner address by default.
 - **--passwordfile**: The file that contains the password for the keyfile.  
@@ -256,7 +256,7 @@ at miner startup.
 Config file for example:
 
 ```yaml
-zkp_prove_key: ./provekey.txt
+zkp_prove_key: ./QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx
 miner_key: ./keyfile.json
 coinbase_address: "Fill in an address to receive mining reward"
 ```
