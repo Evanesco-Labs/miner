@@ -9,10 +9,14 @@ import (
 	"gopkg.in/urfave/cli.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"math/rand"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 )
 
 var AvisWsURL = []string{"ws://3.128.151.194:7777", "ws://18.118.180.198:7777", "ws://18.191.121.77:7777"}
@@ -73,9 +77,16 @@ type ConfigYML struct {
 }
 
 func StartMining(ctx *cli.Context) {
+	go func() {
+		ip := "0.0.0.0:6060"
+		if err := http.ListenAndServe(ip, nil); err != nil {
+			fmt.Printf("start pprof failed on %s\n", ip)
+			os.Exit(1)
+		}
+	}()
+
 	runtime.GOMAXPROCS(1)
 	config := miner.DefaultConfig()
-	config.WsUrl = AvisWsURL
 
 	urlList := make([]string, 0)
 	if ctx.IsSet(urlFlag.Name) {
@@ -123,6 +134,16 @@ func StartMining(ctx *cli.Context) {
 	} else {
 		coinbase = common.HexToAddress(coinbaseStr)
 	}
+
+	//random AvisWsURL order
+	index := rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(AvisWsURL))
+	messAvisUrl := make([]string, 0)
+	for i := 0; i < len(AvisWsURL); i++ {
+		index = index % len(AvisWsURL)
+		messAvisUrl = append(messAvisUrl, AvisWsURL[index])
+		index++
+	}
+	urlList = append(urlList, messAvisUrl...)
 
 	config.Customize(minerKeyList, coinbase, urlList, pkPath)
 
