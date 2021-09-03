@@ -30,11 +30,11 @@ Please note that when the AVIS testnet is officially launched on September 7, it
 ### 1. Download Miner
 Download in github release.
 
-MacOS: [miner-darwin.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.1/miner-darwin.zip)
+MacOS: [miner-darwin.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.2/miner-darwin.zip)
 
-Windows: [miner-windows.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.1/miner-windows.zip)
+Windows: [miner-windows.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.2/miner-windows.zip)
 
-Linux: [miner-linux.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.1/miner-linux.zip)
+Linux: [miner-linux.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.2/miner-linux.zip)
 
 #### MacOS
 Download the file `miner-darwin.zip`  and unzip the file.
@@ -128,12 +128,9 @@ INFO [08-24|16:02:46.363] Init ZKP Problem worker success!
 INFO [08-24|16:02:46.380] miner start
 ```
 
-After that, the log will continue to print the block height, block index:
+After miner starts, it waits for the new mining epoch, the following prints in log:
 ```shell
-INFO [08-25|20:11:11.187] chain status                             height=359 index=59
-INFO [08-25|20:11:17.159] chain status                             height=360 index=60
-INFO [08-25|20:11:23.161] chain status                             height=361 index=61
-...
+INFO [09-03|21:19:57.780] waiting for next mining epoch
 ```
 
 Miners follow new blocks and keep working in the following process：
@@ -150,10 +147,19 @@ INFO [08-24|15:24:51.004] start new mining epoch
 INFO [08-24|15:24:51.008] vrf finished                             challenge height=3015 index=15
 ```
 
-3. Wait till the blockchain reach Challenge Height, and start solving ZKP problem. Log prints:
+3. Wait till the blockchain reach Challenge Height. 
+   The waiting time is printed like the following. It will wait 420 seconds in this example.
 
 ```shell
-INFO [08-24|15:26:21.102] start working ZKP problem
+INFO [09-03|21:21:13.180] waiting for challenge block              time duration (second)=420
+```
+
+5. When reaches the Challenge height, miner start to solve the ZKP problem.
+   It takes about 1 to 2 minutes, depending on your device.
+   
+```shell
+INFO [09-03|21:28:13.140] start working ZKP problem
+INFO [09-03|21:29:21.203] ZKP problem finished
 ```
 
 4. ZKP problem solved, miner submit result. Log prints:
@@ -166,7 +172,11 @@ score=11438795269524584254274319733603080386142752749719967238153045665826607684
 ```
 
 5. Wait for the next epoch. Avis mining epoch interval is 100 blocks.
-
+   The waiting duration is printed like the following. 
+   It will wait 294 seconds in this example.
+```shell
+INFO [09-03|21:36:24.472] waiting for next mining epoch            time duration (second)=294
+```
 
 ## Build
 
@@ -225,6 +235,7 @@ You can start mining with subcommand `mine`. There are some parameters for minin
 - **--coinbase**: Coinbase Address where mining reward will be sent to. It's the same as miner address by default.
 - **--passwordfile**: The file that contains the password for the keyfile.  
 - **--config**: Config file path (default: "./config.yml").
+- **--url**: Set WebSocket raw url of Evanesco full node to connect to. (miner connects to official seed nodes by default)
 
 The following command can show you all the parameters and their uses:
 
