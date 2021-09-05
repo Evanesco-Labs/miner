@@ -10,8 +10,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math/rand"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
@@ -77,14 +75,6 @@ type ConfigYML struct {
 }
 
 func StartMining(ctx *cli.Context) {
-	go func() {
-		ip := "0.0.0.0:6060"
-		if err := http.ListenAndServe(ip, nil); err != nil {
-			fmt.Printf("start pprof failed on %s\n", ip)
-			os.Exit(1)
-		}
-	}()
-
 	runtime.GOMAXPROCS(1)
 	config := miner.DefaultConfig()
 
