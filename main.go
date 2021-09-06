@@ -44,7 +44,7 @@ var app *cli.App
 
 func init() {
 	app = cli.NewApp()
-	app.Version = "v0.0.3"
+	app.Version = "v0.0.4"
 	app.Commands = []cli.Command{
 		commandGenerate,
 		commandInspect,

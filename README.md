@@ -30,11 +30,11 @@ Please note that when the AVIS testnet is officially launched on September 7, it
 ### 1. Download Miner
 Download in github release.
 
-MacOS: [miner-darwin.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.3/miner-darwin.zip)
+MacOS: [miner-darwin.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.4/miner-darwin.zip)
 
-Windows: [miner-windows.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.3/miner-windows.zip)
+Windows: [miner-windows.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.4/miner-windows.zip)
 
-Linux: [miner-linux.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.3/miner-linux.zip)
+Linux: [miner-linux.zip](https://github.com/Evanesco-Labs/miner/releases/download/v0.0.4/miner-linux.zip)
 
 #### MacOS
 Download the file `miner-darwin.zip`  and unzip the file.
