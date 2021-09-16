@@ -17,9 +17,8 @@ import (
 	"time"
 )
 
-var AvisWsURL = []string{"ws://3.128.151.194:7778", "ws://18.118.180.198:7778", "ws://18.191.121.77:7778", "ws://18.191.17.148:7778", "ws://18.219.122.241:7778"}
-
-var AvsiWsURLTest = []string{"ws://127.0.0.1:8541", "ws://127.0.0.1:8542"}
+//var AvisWsURL = []string{"ws://3.128.151.194:7778", "ws://18.118.180.198:7778", "ws://18.191.121.77:7778", "ws://18.191.17.148:7778", "ws://18.219.122.241:7778"}
+var AvisWsURL = []string{"ws://127.0.0.1:7777","ws://18.219.122.241:7779"}
 
 var (
 	configFlag = cli.StringFlag{
@@ -119,21 +118,13 @@ func StartMining(ctx *cli.Context) {
 	var coinbase common.Address
 
 	//coinbase address is miner address by default
-	if coinbaseStr == "" {
-		coinbase = minerKey.Address
-	} else {
-		coinbase = common.HexToAddress(coinbaseStr)
-	}
+	coinbase = common.HexToAddress(coinbaseStr)
 
 	//random AvisWsURL order
-	index := rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(AvisWsURL))
-	messAvisUrl := make([]string, 0)
-	for i := 0; i < len(AvisWsURL); i++ {
-		index = index % len(AvisWsURL)
-		messAvisUrl = append(messAvisUrl, AvisWsURL[index])
-		index++
+	if len(urlList) == 0 {
+		mixAvisUrl := MixSlice(AvisWsURL)
+		urlList = append(urlList, mixAvisUrl...)
 	}
-	urlList = append(urlList, messAvisUrl...)
 
 	config.Customize(minerKeyList, coinbase, urlList, pkPath)
 
@@ -142,6 +133,21 @@ func StartMining(ctx *cli.Context) {
 		utils.Fatalf("Starting miner error: %v", err)
 	}
 	waitToExit()
+}
+
+func MixSlice(urlOrdered []string) []string {
+	urlMix := make([]string, 0)
+	l := len(urlOrdered)
+	for i := 0; i < l; i++ {
+		index := rand.New(rand.NewSource(time.Now().UnixNano())).Intn(len(urlOrdered))
+		urlMix = append(urlMix, urlOrdered[index])
+		if index == len(urlOrdered)-1 {
+			urlOrdered = urlOrdered[:index]
+		} else {
+			urlOrdered = append(urlOrdered[:index], urlOrdered[index+1:]...)
+		}
+	}
+	return urlMix
 }
 
 func waitToExit() {
