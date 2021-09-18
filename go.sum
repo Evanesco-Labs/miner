@@ -48,6 +48,8 @@ github.com/Evanesco-Labs/gnark v0.4.1-0.20210810081143-48fdd25c1073 h1:Bkj41fdvZ
 github.com/Evanesco-Labs/gnark v0.4.1-0.20210810081143-48fdd25c1073/go.mod h1:DBzOTh4q+Kk8ZkZ0riR9gNMtzBWWwInW8kxIreuCKFY=
 github.com/Evanesco-Labs/gnark-crypto v0.4.1-0.20210810075744-74f0c8ad40b3 h1:FWih6h7mdtD1L95x8BcT/yQxKtwZN1mf3QrJJ+MQkvA=
 github.com/Evanesco-Labs/gnark-crypto v0.4.1-0.20210810075744-74f0c8ad40b3/go.mod h1:815PAHg3wvysy0SyIqanF8gZ0Y1wjk/hrDHD/iT88+Q=
+github.com/Evanesco-Labs/go-evanesco v0.0.3-0.20210918061520-9f6108a9352c h1:bXI974wHZJMsBh1n556IAuCQ9QKG2nbVkXx3DVA7e3Y=
+github.com/Evanesco-Labs/go-evanesco v0.0.3-0.20210918061520-9f6108a9352c/go.mod h1:dW57yRRWtcTycL3RMHIClId0A/YM+iNSr8bTF6HsK98=
 github.com/Kubuxu/go-os-helper v0.0.1/go.mod h1:N8B+I7vPCT80IcP58r50u4+gEEcsZETFUpAzWW2ep1Y=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 h1:fLjPD/aNc3UIOA6tDi6QXUemppXK3P9BI7mr2hd6gx8=
@@ -107,10 +109,6 @@ github.com/btcsuite/snappy-go v0.0.0-20151229074030-0bdef8d06723/go.mod h1:8woku
 github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792/go.mod h1:ghJtEyQwv5/p4Mg4C0fgbePVuGr935/5ddU9Z3TmDRY=
 github.com/btcsuite/winsvc v1.0.0/go.mod h1:jsenWakMcC0zFBFurPLEAyrnc/teJEM1O46fmI40EZs=
 github.com/c-bata/go-prompt v0.2.2/go.mod h1:VzqtzE2ksDBcdln8G7mk2RX9QyGjH+OVqOCSiVIqS34=
-github.com/calehh/go-evanesco v0.0.0-20210906114609-ec03ebd5cc1c h1:ioLm9y4M/aLioZykNUkNZn5G7sQA3sKVvESKnYKFHl0=
-github.com/calehh/go-evanesco v0.0.0-20210906114609-ec03ebd5cc1c/go.mod h1:dW57yRRWtcTycL3RMHIClId0A/YM+iNSr8bTF6HsK98=
-github.com/calehh/go-evanesco v0.0.0-20210917073207-89d59654bcbd h1:RYLy1NPpyozKAs9Wtiv8dzmzyfRjkfYYHyAmYmjiCX8=
-github.com/calehh/go-evanesco v0.0.0-20210917073207-89d59654bcbd/go.mod h1:dW57yRRWtcTycL3RMHIClId0A/YM+iNSr8bTF6HsK98=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/cp v0.1.0 h1:SE+dxFebS7Iik5LK0tsi1k9ZCxEaFX4AjQmoyA+1dJk=
 github.com/cespare/cp v0.1.0/go.mod h1:SOGHArjBr4JWaSDEVpWpo/hNg6RoKrls6Oh40hiwW+s=

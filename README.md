@@ -172,6 +172,12 @@ score=11438795269524584254274319733603080386142752749719967238153045665826607684
 INFO [09-03|21:36:24.472] waiting for next mining epoch            time duration (second)=294
 ```
 
+6. If your mining work get the best score in this mining epoch, you will get mining reward and log prints:
+
+```shell
+INFO [09-18|12:18:28.865] Congratulations you got the best score!  height=215,500
+```
+
 ## Build
 
 Building miner requires both a Go (version 1.14 or later) and a C compiler.
@@ -226,7 +232,7 @@ You can start mining with subcommand `mine`. There are some parameters for minin
 
 - **--pk**: Path of the ZKP prove key (default: "./QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx").
 - **--key**: Path of the key file as miner address (default: "./keyfile.json").
-- **--coinbase**: Coinbase Address where mining reward will be sent to. It's the same as miner address by default.
+- **--coinbase**: Coinbase Address where mining reward will be sent to. No need to set this flag if you've already set coinbase address in Fortress wallet.
 - **--passwordfile**: The file that contains the password for the keyfile.  
 - **--config**: Config file path (default: "./config.yml").
 - **--url**: Set WebSocket raw url of Evanesco full node to connect to. (miner connects to official seed nodes by default)
@@ -265,6 +271,29 @@ zkp_prove_key: ./QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx
 miner_key: ./keyfile.json
 coinbase_address: "Fill in an address to receive mining reward"
 ```
+
+
+### Error Logs 
+**If any log with `ERROR` prefix  prints, your mining work is not able to be successfully accepted. 
+Please follow the instruction to fix it.**
+
+- Coinbase Address Incorrect:
+
+  This error may happen, if you've set coinbase address in Fortress and also use `--coinbase` flag when you start your coinbase. 
+  
+  If these two coinbase addresses are not the same, log prints an error:
+
+  `ERROR[09-18|11:21:50.702] coinbase address conflict, check the coinbase address setting in Fortress `
+
+  Fix: Check your coinbase settings and change your coinbase in Fortress or unset the `--coinbase`.
+
+- Miner Address Not Valid:
+
+  If your miner address is not staked or not in the valid time period due to early or overtime, log prints an error:
+
+  `ERROR[09-18|11:21:50.702] miner address not staked or not in valid time period`
+
+  Fix: Check your miner address in Fortress, then stake for your miner address or wait till valid time period.
 
 ## Local Test
 
