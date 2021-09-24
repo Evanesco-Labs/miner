@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	miner "github.com/ethereum/go-ethereum/zkpminer"
 	"github.com/ethereum/go-ethereum/zkpminer/keypair"
 	"gopkg.in/urfave/cli.v1"
@@ -91,6 +92,9 @@ func StartMining(ctx *cli.Context) {
 	var configYml ConfigYML
 	if err == nil {
 		err = yaml.Unmarshal(b, &configYml)
+		if err != nil {
+			log.Error("unmarshall config error", "err", err)
+		}
 		if err == nil {
 			if len(configYml.Url) != 0 {
 				urlList = append(urlList, configYml.Url...)
