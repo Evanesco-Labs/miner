@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
-	miner "github.com/ethereum/go-ethereum/zkpminer"
-	"github.com/ethereum/go-ethereum/zkpminer/keypair"
+	"github.com/Evanesco-Labs/go-evanesco/cmd/utils"
+	"github.com/Evanesco-Labs/go-evanesco/common"
+	"github.com/Evanesco-Labs/go-evanesco/log"
+	miner "github.com/Evanesco-Labs/go-evanesco/zkpminer"
+	"github.com/Evanesco-Labs/go-evanesco/zkpminer/keypair"
 	"gopkg.in/urfave/cli.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"

@@ -23,9 +23,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/Evanesco-Labs/go-evanesco/accounts/keystore"
+	"github.com/Evanesco-Labs/go-evanesco/cmd/utils"
+	"github.com/Evanesco-Labs/go-evanesco/crypto"
 	"github.com/google/uuid"
 	"gopkg.in/urfave/cli.v1"
 )
