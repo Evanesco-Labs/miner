@@ -18,8 +18,8 @@ import (
 	"time"
 )
 
-var AvisWsURL = []string{"ws://3.128.151.194:7778", "ws://18.118.180.198:7778", "ws://18.191.121.77:7778", "ws://18.191.17.148:7778", "ws://18.219.122.241:7778"}
-
+//var AvisWsURL = []string{"ws://3.128.151.194:7778", "ws://18.118.180.198:7778", "ws://18.191.121.77:7778", "ws://18.191.17.148:7778", "ws://18.219.122.241:7778"}
+var AvisWsURL = []string{"ws://18.219.122.241:7779"}
 var (
 	configFlag = cli.StringFlag{
 		Name:  "config",
@@ -33,7 +33,7 @@ var (
 	pkFlag = cli.StringFlag{
 		Name:  "pk",
 		Usage: "provekey of ZKP problem path",
-		Value: "./QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx",
+		Value: "./QmQL4k1hKYiW3SDtMREjnrah1PBsak1VE3VgEqTyoDckz9",
 	}
 	minerKeyFlag = cli.StringFlag{
 		Name:  "key",
@@ -156,7 +156,10 @@ func MixSlice(urlOrdered []string) []string {
 func waitToExit() {
 	exit := make(chan bool, 0)
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	if !signal.Ignored(syscall.SIGHUP) {
+		signal.Notify(sc, syscall.SIGHUP)
+	}
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		for sig := range sc {
 			fmt.Printf("received exit signal:%v", sig.String())
