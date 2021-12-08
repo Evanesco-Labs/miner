@@ -50,9 +50,9 @@ chmod 777 ./miner
 
 Before starting to mine, you also need to download a ZKP ProveKey file.
 
-Click this IPFS [Download Link](https://ipfs.io/ipfs/QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx) will download a file named `QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx`.
+Click this IPFS [Download Link](https://ipfs.io/ipfs/QmQL4k1hKYiW3SDtMREjnrah1PBsak1VE3VgEqTyoDckz9) will download a file named `QmQL4k1hKYiW3SDtMREjnrah1PBsak1VE3VgEqTyoDckz9`.
 
-Copy `QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx` to the unzipped miner directory.
+Copy `QmQL4k1hKYiW3SDtMREjnrah1PBsak1VE3VgEqTyoDckz9` to the unzipped miner directory.
 
 ### 3. Generate Miner Account
 The following  command will generate a new key file named `keyfile.json`to derive you Miner Account. You can set a password for your keyfile and remember this password.
@@ -221,7 +221,7 @@ Check Address and Public key of key file `keyfile.json` with this command:
 ## Miner Specifics
 
 ### ZKP Prove Key
-ZKP Prove Key: [Download Link](https://ipfs.io/ipfs/QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx)
+ZKP Prove Key: [Download Link](https://ipfs.io/ipfs/QmQL4k1hKYiW3SDtMREjnrah1PBsak1VE3VgEqTyoDckz9)
 
 Before starting to mine, you also need to download a ZKP prove key. This is a unique ZKP prove key containing ZKP CRS parameters. Miner have to
 load this ZKP prove key to start GPow work.
@@ -230,7 +230,7 @@ load this ZKP prove key to start GPow work.
 
 You can start mining with subcommand `mine`. There are some parameters for mining configuration：
 
-- **--pk**: Path of the ZKP prove key (default: "./QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx").
+- **--pk**: Path of the ZKP prove key (default: "./QmQL4k1hKYiW3SDtMREjnrah1PBsak1VE3VgEqTyoDckz9").
 - **--key**: Path of the key file as miner address (default: "./keyfile.json").
 - **--coinbase**: Coinbase Address where mining reward will be sent to. No need to set this flag if you've already set coinbase address in Fortress wallet.
 - **--passwordfile**: The file that contains the password for the keyfile.  
@@ -267,7 +267,7 @@ at miner startup.
 Config file for example:
 
 ```yaml
-zkp_prove_key: ./QmNpJg4jDFE4LMNvZUzysZ2Ghvo4UJFcsjguYcx4dTfwKx
+zkp_prove_key: ./QmQL4k1hKYiW3SDtMREjnrah1PBsak1VE3VgEqTyoDckz9
 miner_key: ./keyfile.json
 coinbase_address: "Fill in an address to receive mining reward"
 ```
