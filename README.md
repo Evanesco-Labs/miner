@@ -23,10 +23,8 @@ or in config file, it will be the same as **Miner Address** by default.
 
 **Mining rewards will be sent to Coinbase Address, NOT Miner address!**
 
-## Quick Start Avis TestNet Miner
-Follow this quick start guide to start miner on AVIS TestNet.
-
-Please note that when the AVIS testnet is officially launched on September 7, it will be launched from the Genesis Block, so all previous mining rewards and transactions will be cleared.
+## Quick Start EVA Miner
+Follow this quick start guide to start miner on EVA network.
 ### 1. Download Miner
 Download in [github release](https://github.com/Evanesco-Labs/miner/releases).
 
@@ -165,7 +163,7 @@ coinbase address=<Your Coinbase address>
 score=114387952695245842542743197336030803861427527497199672381530456658266076847982
 ```
 
-5. Wait for the next epoch. Avis mining epoch interval is 100 blocks.
+5. Wait for the next epoch. EVA mining epoch interval is 100 blocks.
    The waiting duration is printed like the following. 
    It will wait 294 seconds in this example.
 ```shell
