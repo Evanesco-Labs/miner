@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
 	"syscall"
 	"time"
 )
@@ -74,6 +75,7 @@ type ConfigYML struct {
 }
 
 func StartMining(ctx *cli.Context) {
+	debug.SetGCPercent(10)
 	runtime.GOMAXPROCS(1)
 	config := miner.DefaultConfig()
 
