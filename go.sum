@@ -56,6 +56,8 @@ github.com/Evanesco-Labs/gnark v0.4.1-0.20211224081327-4f8af4c8073f/go.mod h1:UF
 github.com/Evanesco-Labs/gnark-crypto v0.4.1-0.20211220040057-c079b829266f h1:tDpoL2rOJeuwmG2WHcuvM9YyrSWKFbKPIVouJ1SY8QE=
 github.com/Evanesco-Labs/gnark-crypto v0.4.1-0.20211220040057-c079b829266f/go.mod h1:815PAHg3wvysy0SyIqanF8gZ0Y1wjk/hrDHD/iT88+Q=
 github.com/Evanesco-Labs/go-evanesco v0.0.3-0.20211027011424-312266f5fae1/go.mod h1:p9Sq9goRX8fBDmocnfD7Ab8cz1iB+/X0iiztZTDaAyI=
+github.com/Evanesco-Labs/go-evanesco v1.0.1-0.20211227031128-25f06ef16c40 h1:B/66GUBKUa13AuFLX6VrYxiNFV90B6stGpCABIYPpVU=
+github.com/Evanesco-Labs/go-evanesco v1.0.1-0.20211227031128-25f06ef16c40/go.mod h1:COYfLozboiqlP+PhR/8PkmQbBlQH1NGILhTAevli/+0=
 github.com/Kubuxu/go-os-helper v0.0.1/go.mod h1:N8B+I7vPCT80IcP58r50u4+gEEcsZETFUpAzWW2ep1Y=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
@@ -116,8 +118,6 @@ github.com/btcsuite/snappy-go v0.0.0-20151229074030-0bdef8d06723/go.mod h1:8woku
 github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792/go.mod h1:ghJtEyQwv5/p4Mg4C0fgbePVuGr935/5ddU9Z3TmDRY=
 github.com/btcsuite/winsvc v1.0.0/go.mod h1:jsenWakMcC0zFBFurPLEAyrnc/teJEM1O46fmI40EZs=
 github.com/c-bata/go-prompt v0.2.2/go.mod h1:VzqtzE2ksDBcdln8G7mk2RX9QyGjH+OVqOCSiVIqS34=
-github.com/calehh/go-evanesco v0.0.0-20211224084658-30e6930f3ca5 h1:MISxfeuUlYfQk7/Ihd1tZRJ+w30m7XtsiU+2zSK9aSU=
-github.com/calehh/go-evanesco v0.0.0-20211224084658-30e6930f3ca5/go.mod h1:COYfLozboiqlP+PhR/8PkmQbBlQH1NGILhTAevli/+0=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/cp v0.1.0 h1:SE+dxFebS7Iik5LK0tsi1k9ZCxEaFX4AjQmoyA+1dJk=
 github.com/cespare/cp v0.1.0/go.mod h1:SOGHArjBr4JWaSDEVpWpo/hNg6RoKrls6Oh40hiwW+s=
